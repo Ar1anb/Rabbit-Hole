@@ -82,6 +82,20 @@ const pics = RH.media({ items: [
 ] });
 assert.deepStrictEqual(pics, [{ src: 'https://x.org/thumb/a/1280px-Marx_1875.jpg', name: 'Marx_1875.jpg', caption: 'Marx in 1875', lead: true }]);
 assert.deepStrictEqual(RH.media({}), []);
+
+// The recut: never the opening definition, at most two lines from the opening, a deeper line must name the subject, nothing after "See also".
+const art = ['Zeno of Elea was a Greek philosopher of the fifth century before the common era and a member of the Eleatic school.',
+  'He is best known for his paradoxes, which Aristotle called the first examples of a method known as dialectic.',
+  'Plato wrote that Zeno was famous in Athens and that the young Socrates once heard him read from his only book.',
+  'Almost nothing he wrote survived, and his arguments are known only through the reports of his critics and rivals.',
+  '== Life ==', 'He was arrested after the plot failed and it is said that he was tortured and killed by the tyrant of the city.',
+  'Ancient writers claimed that Zeno was tortured and killed after a failed plot against the tyrant of Elea in about 430.',
+  '== See also ==', 'Zeno is famous and was the first and only and greatest philosopher to be executed in the year 430 of them all.'].join('\n');
+const cut = RH.recut(art, 'Zeno of Elea');
+assert.strictEqual(cut.length, 3);
+assert.ok(!cut.some((b) => /was a Greek philosopher|He was arrested|greatest philosopher/.test(b.text)), 'no definition, no line that leans on the one before, nothing from See also');
+assert.deepStrictEqual(cut.map((b) => b.label), ['', '', 'Life']);
+assert.strictEqual(RH.recut('Short stub. Nothing more to say here.', 'Stub'), null, 'too little to choose from keeps the opening');
 console.log('engine ok', picks);
 
 if (process.argv.includes('--live')) {

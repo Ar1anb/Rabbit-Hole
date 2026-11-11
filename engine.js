@@ -129,6 +129,42 @@
     return out;
   }
 
-  const RH = { TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media };
+  // The recut: instead of the article's opening paragraph, its three most striking sentences, one from each of
+  // three different sections, in reading order. No AI: a sentence scores for words that mark a turn, a first, a
+  // conflict or a verdict, and for carrying a number. The opening definition is always left out.
+  const fullUrl = (title) => 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=extracts&explaintext=1&titles=' + encodeURIComponent(title);
+  const HOOK = /\b(first|only|never|famous|infamous|best known|known for|despite|although|secret|killed|executed|murdered|assassinat|banned|tortured|exiled|arrested|imprison|invented|discovered|founded|revolution|controvers|scandal|myth|legend|largest|greatest|oldest|most \w+|considered|regarded|called|nicknamed|so-called|refused|rejected|collapse|destroyed|survived|died|death|war|rebel|forbidden|heresy|influen|changed|transformed|origin|unknown|mystery|paradox|ironically|surprising|contrary|in fact|turning point)/gi;
+  const END = /^(See also|References|Notes|Further reading|External links|Bibliography|Sources|Citations|Footnotes|Gallery|Works|Selected works|Publications|Writings|Filmography|Discography|Explanatory notes|Works cited|In popular culture)$/i;
+  const LOOSE = /^(In this|In that|In these|As such|This|These|Those|Such|However|Moreover|Furthermore|Thus|Therefore|Hence|For example|For instance|In addition|Additionally|Another|Others?|Also|Similarly|Likewise|Nevertheless|Nonetheless|Instead|Later|Then|There|Here|Both|Some|Many|The latter|The former|As a result|In contrast|On the other hand|According)\b/;
+  // A sentence lifted from deep in an article must stand alone: it has to name the subject and not lean on the line before it.
+  const LEANS = /^(He|She|It|They|His|Her|Its|Their|Only|Because|After|Before|During|When|While|By|At|But|And|Yet|So)\b/;
+  function recut(text, title) {
+    const best = []; // the strongest sentence of each section; each paragraph of the opening counts as a section
+    const names = String(title || '').replace(/\(.*?\)/g, '').split(/[\s,]+/).filter((w) => w.length > 3);
+    const named = (s) => names.some((w) => s.includes(w));
+    let label = '', n = 0, done = false, first = true;
+    for (const block of String(text || '').split(/\n+/)) {
+      const head = /^(=+)\s*(.+?)\s*=+$/.exec(block);
+      if (head) { if (head[1].length === 2) { label = head[2]; done = END.test(label); n++; } continue; }
+      if (done || !block.trim()) continue;
+      if (!label) n++;
+      const sentences = block.match(/\S.*?[a-z\d)"”]{2}[.!?]["”]?(?=\s+[A-Z“"(]|\s*$)/g) || [];
+      sentences.forEach((raw) => {
+        const s = raw.replace(/\s*\(\s*[;,]?\s*\)/g, '').replace(/\s+/g, ' ').trim();
+        if (first) { first = false; return; } // the opening definition
+        if (s.length < 70 || s.length > 190 || LOOSE.test(s) || /[{}=\\|<>—]|ISBN|\bpp?\.|e\.g\.|:$/.test(s) || (s.match(/\(/g) || []).length !== (s.match(/\)/g) || []).length) return;
+        if (label && (LEANS.test(s) || !named(s))) return;
+        const score = (s.match(HOOK) || []).length * 2 + (/\d/.test(s) ? 1 : 0) + (label ? 0 : 2);
+        const slot = best.find((b) => b.n === n);
+        if (!slot) best.push({ n, label, text: s, score }); else if (score > slot.score) Object.assign(slot, { text: s, score });
+      });
+    }
+    // two lines from the opening at most, so one comes from further in when the article has a good one
+    const ranked = best.filter((b) => b.score >= 2).sort((a, b) => b.score - a.score), deep = ranked.find((b) => b.label);
+    const top = (deep ? [...ranked.filter((b) => !b.label).slice(0, 2), deep, ...ranked.filter((b) => b.label && b !== deep)] : ranked).slice(0, 3).sort((a, b) => a.n - b.n);
+    return top.length === 3 ? top.map((b) => ({ label: b.label, text: b.text })) : null; // too little to choose from: keep the opening
+  }
+
+  const RH = { fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media };
   if (typeof module !== 'undefined') module.exports = RH; else root.RH = RH;
 })(this);

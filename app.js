@@ -258,6 +258,20 @@ function fit(card) {
 // Room changes when the chips, a picture or the fonts arrive, and when the window does; a frame later keeps the observer out of its own way.
 const fitter = new ResizeObserver((es) => requestAnimationFrame(() => { for (const e of es) fit(e.target.closest('.card')); }));
 
+// The words: not the article's opening paragraph but its three most striking lines (RH.recut), each marked with the
+// section it came from. Fetched while the card waits in the queue; if it fails, the opening paragraph stays.
+async function loadCut(card) {
+  try {
+    const r = await fetch(RH.fullUrl(card._page.title));
+    if (!r.ok) return;
+    const cut = RH.recut((RH.pages(await r.json())[0] || {}).extract, card._page.title);
+    if (!cut) return;
+    $('.extract', card).replaceChildren(...cut.flatMap((b, i) => [i && h('br'), h('small', { textContent: b.label }), i ? b.text : h('b', { textContent: b.text })]).filter(Boolean));
+    card._say = card._page.title + '. ' + cut.map((b) => b.text).join(' ');
+    fit(card);
+  } catch { /* the opening paragraph stays */ }
+}
+
 // More pictures: the article's own, in reading order. A card that had none gets its first here; a card with several turns them over.
 async function loadPics(card) {
   const p = card._page, lead = p.thumbnail && p.thumbnail.width >= 400 ? p.thumbnail.source : '';
@@ -310,7 +324,7 @@ function add(pages, because, after, max, evenIfSeen) {
     const topic = because.topic || state.of[because.seed]; // an idea inherits the topic of the idea that led to it
     if (topic) state.of[p.title] = topic;
     const el = makeCard(p, because);
-    loadPics(el);
+    loadPics(el); loadCut(el);
     if (after) { after.after(el); after = el; } else tail.before(el);
     out.push(el);
   }

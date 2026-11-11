@@ -332,6 +332,10 @@ body:not([data-view="feed"]) .upnext { display: none; }
   .side { padding-left: max(16px, env(safe-area-inset-left)); padding-right: calc(max(16px, env(safe-area-inset-right)) + 52px); }
 }
 
+/* Each of a card's three lines is marked with the section of the article it came from, or a dot for the opening */
+.extract small { margin-right: 8px; font-size: 13px; font-weight: 500; color: var(--accent); }
+.extract small:empty { display: inline-block; width: 6px; height: 6px; margin-bottom: 2px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+
 /* Read all: the whole text, scrolling if it must; app.js shows the button only when lines are cut */
 .card.open .extract { display: block; -webkit-line-clamp: unset; overflow-y: auto; }
 @media (max-width: 899px) {
