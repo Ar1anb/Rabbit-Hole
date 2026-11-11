@@ -693,3 +693,21 @@ route();
 
 if (state.started) { tail.hidden = false; refill(); } else firstRun();
 drawStats();
+
+// ---- updates: an iPhone home-screen app has no refresh button and keeps showing its saved copy of the page ----
+// So the hosted app looks for itself: it fetches the page fresh (which also replaces the saved copy), and if that
+// page links to a newer app.js?v=N than the one running, it reloads once. Nothing stored on the device is touched.
+const RUNNING = +(/[?&]v=(\d+)/.exec(document.currentScript ? document.currentScript.src : '') || [])[1] || 0;
+async function update() {
+  if (!RUNNING || !/^https?:/.test(location.protocol)) return; // the one-file phone build and the desktop files are always current
+  try {
+    const page = await (await fetch(location.pathname, { cache: 'reload' })).text();
+    const latest = +(/app\.js\?v=(\d+)/.exec(page) || [])[1] || 0;
+    if (latest > RUNNING && sessionStorage.getItem('rabbit-hole.tried') !== String(latest)) {
+      sessionStorage.setItem('rabbit-hole.tried', latest); // one try per version, so a stubborn cache cannot loop
+      save(); location.reload();
+    }
+  } catch { /* offline: carry on with what is here */ }
+}
+update();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); }); // coming back to the app checks again
