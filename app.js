@@ -646,7 +646,8 @@ function drawInterests() {
         h('div', { className: 'panel danger' }, h('h2', { textContent: 'Sound' }), sound),
         canSpeak && pick.options.length && h('div', { className: 'panel danger' }, h('h2', { textContent: 'Voice for Listen' }), h('div', { className: 'topics' }, pick, sample)),
         h('div', { className: 'panel danger' }, h('p', { textContent: 'Wipes your interests, your saved ideas and what you have already seen.' }), reset))),
-    h('p', { className: 'credit' }, 'Words and pictures from Wikipedia, CC BY-SA.')));
+    h('p', { className: 'credit' }, 'Words and pictures from Wikipedia, CC BY-SA.'),
+    h('p', { className: 'credit', textContent: 'hello there' })));
 }
 
 // ---- Map: the burrow you have dug, every idea under the one that led to it ----
