@@ -56,8 +56,8 @@ const hole = (() => {
       if (r < 16) break;
       const x = W / 2 + Math.sin(i * 1.7) * r * 0.07, y = H / 2 + Math.cos(i * 2.3) * r * 0.05; // the burrow bends a little
       const near = Math.min(1, r / R0), wave = age < 1 ? Math.max(0, 1 - Math.abs(r - age * R0 * 1.1) / (R0 * 0.2)) * (1 - age) : 0;
-      const alpha = (dark ? 0.1 + 0.26 * near : 0.06 + 0.16 * near) * Math.min(1, (d + 1.2) * 2) + wave * 0.5;
-      g.fillStyle = `oklch(${dark ? 0.82 : 0.32} ${0.05 + wave * 0.08} ${hue} / ${alpha.toFixed(3)})`;
+      const alpha = (dark ? 0.22 + 0.42 * near : 0.12 + 0.28 * near) * Math.min(1, (d + 1.2) * 2) + wave * 0.5;
+      g.fillStyle = `oklch(${dark ? 0.82 : 0.32} ${0.08 + wave * 0.08} ${hue} / ${Math.min(1, alpha).toFixed(3)})`;
       g.beginPath();
       const n = Math.max(28, Math.min(170, Math.round(r / 6))), wide = Math.max(0.5, Math.min(2.4, r / 320));
       for (let j = 0; j < n; j++) {
@@ -208,6 +208,21 @@ const isSaved = (title) => state.saved.some((x) => x.title === title);
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const btn = (name, label, cls, pressed) => h('button', { type: 'button', name, className: cls, textContent: label, ariaPressed: String(!!pressed) });
 
+// A card's own buttons each carry a small engraved mark, so they are told apart at a glance. The marks are fixed
+// drawings of ours (never page text); every stroke has pathLength 1 so the stylesheet can draw it in like a burin cut.
+const MARK = {
+  like: '<ellipse cx="12" cy="9.5" rx="9" ry="5.5" pathLength="1"/><ellipse cx="12" cy="12.5" rx="5.6" ry="3.4" pathLength="1"/><ellipse cx="12" cy="15" rx="2.6" ry="1.5" pathLength="1"/>', // down the hole
+  save: '<path d="M7 4h10v16l-5-4-5 4z" pathLength="1"/><path class="hatch" d="M9.5 8.5l5-2" pathLength="1"/><path class="hatch" d="M9.5 11.5l5-2" pathLength="1"/><path class="hatch" d="M9.5 14.5l5-2" pathLength="1"/>',
+  less: '<circle cx="12" cy="12" r="8" pathLength="1"/><path d="M6.4 17.6L17.6 6.4" pathLength="1"/>',
+  more: '<path d="M5 7h14" pathLength="1"/><path d="M5 12h14" pathLength="1"/><path d="M5 17h9" pathLength="1"/>',
+};
+function act(name, label, pressed) {
+  return h('button', { type: 'button', name, className: 'btn act ' + name, ariaPressed: String(!!pressed), title: label },
+    h('span', { className: 'mark', ariaHidden: 'true', innerHTML: `<svg viewBox="0 0 24 24" width="20" height="20">${MARK[name]}</svg>` }),
+    h('span', { className: 'lab', textContent: label }));
+}
+const relabel = (b, text) => { $('.lab', b).textContent = text; b.title = text; };
+
 function becauseLine(b) {
   const [lead, name] = b.kind === 'like' ? ["Because you're into", b.seed]
     : b.kind === 'deeper' ? ['Deeper from', b.seed]
@@ -229,12 +244,12 @@ function makeCard(p, because) {
         cutTitle(p.title),
         p.description && h('p', { className: 'desc', textContent: cap(p.description) }),
         h('p', { className: 'extract' }, h('b', { textContent: text.slice(0, cut) }), text.slice(cut)),
+        Object.assign(act('more', 'Read all'), { hidden: true }), // sits where the text is cut; fit() shows it
         h('div', { className: 'acts' },
-          btn('like', 'More like this', 'btn primary'),
-          btn('save', isSaved(p.title) ? 'Saved' : 'Save', 'btn', isSaved(p.title)),
-          btn('less', 'Less like this', 'btn quiet'),
-          Object.assign(btn('more', 'Read all', 'btn quiet'), { hidden: true }),
-          h('a', { className: 'link', href: RH.link(p.title), target: '_blank', rel: 'noopener', textContent: 'Read on Wikipedia' }))),
+          act('like', 'More like this'),
+          act('save', isSaved(p.title) ? 'Saved' : 'Save', isSaved(p.title)),
+          act('less', 'Less like this')),
+        h('a', { className: 'wiki', href: RH.link(p.title), target: '_blank', rel: 'noopener', textContent: 'W', ariaLabel: 'Read on Wikipedia', title: 'Read on Wikipedia' })),
       h('div', { className: 'deeper', hidden: true }, h('h3', { textContent: 'Go deeper' }), h('ul'))));
   el._page = p; el._because = because; el._say = p.title + '. ' + text;
   watch.observe(el);
@@ -423,11 +438,11 @@ feed.addEventListener('click', (e) => {
   if (!card || !card._page) return;
   const on = b.ariaPressed !== 'true';
   if (b.name === 'like') {
-    b.ariaPressed = String(on); b.textContent = on ? 'More of this is coming' : 'More like this';
+    b.ariaPressed = String(on); relabel(b, on ? 'More coming' : 'More like this');
     RH.signal(state, sig(card), on ? RH.W.like : -RH.W.like);
     if (on) { add(card._more || [], { kind: 'like', seed: card._page.title }, card, 2); const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2); hole.pulse(); sfx('like'); }
   } else if (b.name === 'save') {
-    b.ariaPressed = String(on); b.textContent = on ? 'Saved' : 'Save';
+    b.ariaPressed = String(on); relabel(b, on ? 'Saved' : 'Save');
     const p = card._page;
     state.saved = state.saved.filter((x) => x.title !== p.title);
     if (on) state.saved.unshift({ title: p.title, description: p.description || '', thumb: p.thumbnail ? p.thumbnail.source : '' });
@@ -437,14 +452,14 @@ feed.addEventListener('click', (e) => {
     const seeds = [card._page.title, card._because.seed];
     // Drop what was already queued from the same source, so the next card is not more of it.
     for (let n = card.nextElementSibling; n && n !== tail;) { const next = n.nextElementSibling; if (seeds.includes(n._because.seed)) n.remove(); n = next; }
-    b.textContent = 'Less of this from now on'; b.disabled = true;
+    relabel(b, 'Less from now on'); b.disabled = true;
     step(1);
   } else if (b.name === 'hole') {
     const [el] = add([b._page], { kind: 'deeper', seed: card._page.title }, card, 1);
     if (el) { RH.signal(state, sig(el), RH.W.deeper); el.scrollIntoView(); }
     b.closest('li').remove();
   } else if (b.name === 'pic') showPic(card, card._at + 1);
-  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); b.textContent = on ? 'Show less' : 'Read all'; fit(card); }
+  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Show less' : 'Read all'); fit(card); }
   applyLook();
   save();
 });

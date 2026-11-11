@@ -5,14 +5,14 @@
   --ground: #0a0a0a; --surface: oklch(0.19 0.012 var(--hue)); --raised: #222222; --active: #2c2c2c;
   --border: #2a2a2a; --control: #474747;
   --text: #f3f3f1; --muted: #a9a9a5; --accent: oklch(0.8 0.1 var(--hue)); --negative: #f0806e;
-  --primary: #f3f3f1; --on-primary: #111111; --primary-hover: #d6d6d2;
+  --primary: #f3f3f1; --on-primary: #111111; --primary-hover: #d6d6d2; --on-accent: #0b0f0e;
 }
 :root[data-theme="light"] {
   color-scheme: light;
   --ground: #ffffff; --surface: oklch(0.978 0.006 var(--hue)); --raised: #ffffff; --active: #ededed;
   --border: #eaeaea; --control: #d9d9d6;
   --text: #1f201d; --muted: #636361; --accent: oklch(0.46 0.09 var(--hue)); --negative: #b42318;
-  --primary: #1f201d; --on-primary: #ffffff; --primary-hover: #3a3b37;
+  --primary: #1f201d; --on-primary: #ffffff; --primary-hover: #3a3b37; --on-accent: #ffffff;
 }
 :root {
   --font: "Instrument Sans", Inter, system-ui, sans-serif;
@@ -61,7 +61,7 @@ main { position: relative; height: 100dvh; }
 .view:focus-visible { outline: none; } /* opening the app on #map focuses the whole screen; a ring round all of it says nothing */
 .feed { scroll-snap-type: y mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior: contain; }
 .card { height: 100%; padding: 36px 56px; display: grid; place-items: center; scroll-snap-align: start; scroll-snap-stop: always; }
-.sheet { width: min(var(--col), 100%); height: min(var(--sheet-h), 100%); display: grid; grid-template: "pic text" minmax(0, 1fr) "pic deeper" auto / 449fr 635fr; column-gap: 16px; background: var(--surface); border-radius: 22px; overflow: hidden; }
+.sheet { width: min(var(--col), 100%); height: min(var(--sheet-h), 100%); display: grid; grid-template: "pic text" minmax(0, 1fr) "pic deeper" auto / 449fr 635fr; column-gap: 16px; background: color-mix(in oklab, var(--surface) 76%, transparent); border-radius: 22px; overflow: hidden; }
 .pic { grid-area: pic; position: relative; margin: 0; min-height: 0; overflow: hidden; background: var(--active); }
 .pic img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
 /* A card's pictures are the article's own: the caption of the one showing, and a counter that turns to the next */
@@ -69,7 +69,7 @@ main { position: relative; height: 100dvh; }
 .pic figcaption span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .pic .more { position: absolute; right: 10px; top: 10px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: rgb(10 10 10 / .7); color: #f3f3f1; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
 .pic .more:hover { background: rgb(10 10 10 / .9); }
-.text { grid-area: text; min-height: 0; padding: 40px 40px 0 24px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.text { grid-area: text; position: relative; min-height: 0; padding: 40px 40px 0 24px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .because { margin: 0 0 14px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .because i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .because b { font-weight: 500; color: var(--text); }
@@ -88,8 +88,31 @@ main { position: relative; height: 100dvh; }
 .btn.quiet { border-color: transparent; background: none; color: var(--muted); }
 .btn.quiet:hover { background: var(--active); color: var(--text); }
 .btn:disabled { background: var(--active); border-color: var(--active); color: var(--muted); cursor: default; }
-.link { margin-left: auto; color: var(--muted); text-underline-offset: 3px; }
-.link:hover { color: var(--text); }
+
+/* A card's own buttons: each has its own shape and its own engraved mark (drawn in app.js) */
+.act { display: inline-flex; align-items: center; gap: 8px; }
+.act .mark { display: grid; }
+.act svg { overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+/* More like this: the one filled button, in the reader's colour, marked with the hole */
+.act.like { padding: 0 20px 0 14px; border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.act.like:hover { background: color-mix(in oklab, var(--accent) 84%, var(--text)); }
+.act.like[aria-pressed="true"] { background: none; color: var(--accent); }
+/* Save: a squarer outline with a bookmark that is hatched in once saved */
+.act.save { padding: 0 16px 0 12px; border-radius: 12px; background: none; }
+.act.save:hover { background: var(--active); }
+.act.save[aria-pressed="true"] { background: none; border-color: var(--accent); color: var(--accent); }
+.act.save .hatch { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .45s ease-out; }
+.act.save[aria-pressed="true"] .hatch { stroke-dashoffset: 0; }
+/* Less like this: no frame, quiet until you reach for it */
+.act.less { padding: 0 12px; border-color: transparent; background: none; color: var(--muted); }
+.act.less:hover { background: none; color: var(--negative); }
+.act.less:disabled { background: none; border-color: transparent; color: var(--negative); }
+/* Read all: a line of its own right under the cut text */
+.act.more, .act.more[aria-pressed="true"] { align-self: flex-start; flex: none; height: 36px; margin-top: 4px; padding: 0; border: 0; background: none; color: var(--accent); }
+.act.more:hover .lab { text-decoration: underline; text-underline-offset: 3px; }
+/* Wikipedia, out of the way in the corner */
+.wiki { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--control); border-radius: 50%; color: var(--muted); font: 400 17px/1 var(--serif); text-decoration: none; }
+.wiki:hover { border-color: var(--text); color: var(--text); }
 
 /* A card with no picture keeps its own height instead of stretching over blank space */
 .nopic .sheet, .start .sheet { height: auto; max-height: min(var(--sheet-h), 100%); }
@@ -211,7 +234,9 @@ body:not([data-view="feed"]) .step, body:has(.start) .step { display: none; }
   .nopic .extract { -webkit-line-clamp: 12; }
   .acts { margin-top: auto; padding-top: 14px; }
   .btn { height: 44px; padding: 0 16px; }
-  .link { margin-left: 0; padding: 12px 4px; }
+  .wiki { top: 12px; right: 12px; width: 36px; height: 36px; }
+  .because { padding-right: 40px; }
+  .act.less .lab { display: none; } /* the mark alone on a phone; the name stays as its title */
   .deeper { padding: 12px 0 16px 20px; }
   .deeper h3 { margin-bottom: 8px; }
   .deeper ul { flex-wrap: nowrap; overflow-x: auto; max-height: none; padding-right: 20px; scrollbar-width: none; }
@@ -229,6 +254,7 @@ body:not([data-view="feed"]) .step, body:has(.start) .step { display: none; }
 
 /* ---- Feel: nothing here is needed to read a card; all travel is dropped under reduced motion ---- */
 @property --hue { syntax: "<number>"; inherits: true; initial-value: 185; }
+@property --ink { syntax: "<length>"; inherits: false; initial-value: 9px; }
 :root { transition: --hue 1.2s; --rail: 0px; }
 * { -webkit-tap-highlight-color: transparent; }
 .feed { touch-action: pan-y; }
@@ -274,16 +300,24 @@ body:not([data-view="feed"]) .upnext { display: none; }
 .upnext button:hover b { text-decoration: underline; text-underline-offset: 3px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .card.on .pic img { animation: kenburns 26s ease-out infinite alternate; }
+  /* A picture is engraved in: hatch lines swell until they close up, over the plate or over the picture before it */
+  .card.on .pic img { -webkit-mask-image: repeating-linear-gradient(118deg, #000 0 var(--ink), transparent var(--ink) 8px); mask-image: repeating-linear-gradient(118deg, #000 0 var(--ink), transparent var(--ink) 8px); animation: hatch 1.1s cubic-bezier(.3, .5, .2, 1) backwards, kenburns 26s ease-out infinite alternate; } /* taste-skill-ignore: a mask of hard-edged lines, not a gradient fill */
+  @keyframes hatch { from { --ink: 0px; } }
+  /* Each button's mark is cut in stroke by stroke; the hole mark sinks when you ask for more */
+  .card.on .act svg > * { stroke-dasharray: 1; animation: draw .55s ease-out .35s backwards; }
+  .card.on .act.save svg > *, .card.on .act.more svg > * { animation-delay: .45s; }
+  .card.on .act.less svg > * { animation-delay: .55s; }
+  .card.on .act svg > .hatch { animation: none; }
+  @keyframes draw { from { stroke-dashoffset: 1; } }
+  .act.like[aria-pressed="true"] svg > * { transform-box: view-box; transform-origin: 12px 12px; animation: sink .7s cubic-bezier(.3, 0, .2, 1); }
+  .act.like[aria-pressed="true"] svg > :nth-child(2) { animation-delay: .08s; }
+  .act.like[aria-pressed="true"] svg > :nth-child(3) { animation-delay: .16s; }
+  @keyframes sink { 45% { transform: translateY(5px) scale(.45); } }
   .card.on .text > *, .card.on .deeper li, .upnext li { animation: rise .55s cubic-bezier(.2, .7, .2, 1) backwards; }
   /* The title is cut letter by letter instead of rising */
   .card.on .text > h2 { animation: none; }
   .card.on h2 .g { animation: cut .16s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--i) * 26ms + 90ms); }
   @keyframes cut { from { opacity: 0; transform: translateY(-.12em) scale(1.25); } }
-  .card.on .pic { animation: press .7s cubic-bezier(.2, .7, .2, 1) backwards; }
-  @keyframes press { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
-  /* The next picture of the same idea is pressed in over the last one */
-  .card.on .pic img.turn { animation: press .8s cubic-bezier(.2, .7, .2, 1) backwards, kenburns 26s ease-out infinite alternate; }
   .burrow li { animation: rise .5s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(min(var(--i), 40) * 16ms); }
   .card.on .text > :nth-child(2) { animation-delay: .06s; }
   .card.on .text > :nth-child(3) { animation-delay: .12s; }
