@@ -96,6 +96,15 @@ assert.strictEqual(cut.length, 3);
 assert.ok(!cut.some((b) => /was a Greek philosopher|He was arrested|greatest philosopher/.test(b.text)), 'no definition, no line that leans on the one before, nothing from See also');
 assert.deepStrictEqual(cut.map((b) => b.label), ['', '', 'Life']);
 assert.strictEqual(RH.recut('Short stub. Nothing more to say here.', 'Stub'), null, 'too little to choose from keeps the opening');
+
+// Books: one of each title, covers first, and nothing at all when the search is mostly noise.
+const shelf = RH.books({ numFound: 900, docs: [
+  { title: 'The Prince', key: '/works/1', author_name: ['Niccolò Machiavelli'], first_publish_year: 1515 },
+  { title: 'Prince', key: '/works/2', cover_i: 7 },
+  { title: 'Art of War', key: '/works/3', cover_i: 9, author_name: ['A', 'B', 'C'] }] });
+assert.deepStrictEqual(shelf.map((b) => b.title), ['Art of War', 'The Prince']);
+assert.deepStrictEqual(shelf[0], { title: 'Art of War', by: 'A, B', year: '', cover: 'https://covers.openlibrary.org/b/id/9-M.jpg', url: 'https://openlibrary.org/works/3' });
+assert.deepStrictEqual(RH.books({ numFound: 15, docs: [{ title: 'Noise', key: '/works/4' }] }), []);
 console.log('engine ok', picks);
 
 if (process.argv.includes('--live')) {

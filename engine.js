@@ -165,6 +165,21 @@
     return top.length === 3 ? top.map((b) => ({ label: b.label, text: b.text })) : null; // too little to choose from: keep the opening
   }
 
-  const RH = { fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media };
+  // Book recommendations: Open Library's best matches for the idea's name (keyless). An idea too narrow to have
+  // books of its own (under 40 matches is mostly noise) returns nothing, and the caller tries the idea that led to it.
+  const booksUrl = (q) => 'https://openlibrary.org/search.json?limit=12&language=eng&fields=title,author_name,first_publish_year,cover_i,key&q=' + encodeURIComponent(q);
+  function books(json) {
+    if (!(json.numFound >= 40)) return [];
+    const seen = {}, out = [];
+    for (const d of json.docs || []) {
+      const id = String(d.title || '').toLowerCase().replace(/^(the|a|an) /, '').replace(/[^a-z0-9]+/g, ' ').trim();
+      if (!id || seen[id] || !d.key) continue; // one edition of each book
+      seen[id] = 1;
+      out.push({ title: d.title, by: (d.author_name || []).slice(0, 2).join(', '), year: d.first_publish_year || '', cover: d.cover_i ? 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg' : '', url: 'https://openlibrary.org' + d.key });
+    }
+    return out.sort((a, b) => !a.cover - !b.cover).slice(0, 4); // books with a cover first, otherwise Open Library's order
+  }
+
+  const RH = { booksUrl, books, fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media };
   if (typeof module !== 'undefined') module.exports = RH; else root.RH = RH;
 })(this);
