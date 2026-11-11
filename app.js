@@ -170,11 +170,23 @@ let listening = false, saying = null;
 function speak(card) {
   speechSynthesis.cancel(); saying = null;
   if (!listening || !card || !card._page) return;
-  const u = saying = new SpeechSynthesisUtterance(card._say); // kept in `saying` so the browser cannot drop it before it ends
-  u.lang = 'en';
-  u.voice = speechSynthesis.getVoices().find((v) => /^en/i.test(v.lang) && /Natural/.test(v.name)) || null; // Edge's natural voices, when it has them
-  u.onend = () => setTimeout(() => { if (saying === u && listening) step(1); }, 700);
-  speechSynthesis.speak(u);
+  const last = say(card._say);
+  last.onend = () => setTimeout(() => { if (saying === last && listening) step(1); }, 900);
+}
+// English voices, best first: the neural ones (Edge "Natural", Apple "Premium" / "Enhanced" / Siri) sound human, the rest robotic.
+const voices = () => speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang))
+  .map((v) => [(/Natural/.test(v.name) ? 3 : /Premium|Enhanced|Siri/.test(v.name) ? 2 : /Google/.test(v.name) ? 1 : 0), v]).sort((a, b) => b[0] - a[0]).map((x) => x[1]);
+// Read sentence by sentence, a little slower than the default, so there is a breath between sentences. Returns the last utterance.
+function say(text) {
+  const all = voices(), voice = all.find((v) => v.name === state.voice) || all[0] || null;
+  let u = null;
+  for (const part of text.match(/[^.!?]+[.!?]+["”)]?|[^.!?]+$/g) || [text]) {
+    if (!part.trim()) continue;
+    u = new SpeechSynthesisUtterance(part.trim());
+    u.lang = 'en'; u.voice = voice; u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }
+  return saying = u; // kept so the browser cannot drop it before it ends
 }
 function listen(on) {
   listening = on && canSpeak;
@@ -183,7 +195,10 @@ function listen(on) {
 }
 $('#listen').hidden = !canSpeak;
 $('#listen').onclick = () => listen(!listening);
-if (canSpeak) { speechSynthesis.getVoices(); addEventListener('pagehide', () => speechSynthesis.cancel()); } // the voice list loads late; ask early
+if (canSpeak) { // the voice list loads late: ask early, and redraw the voice picker when it arrives
+  speechSynthesis.getVoices(); addEventListener('pagehide', () => speechSynthesis.cancel());
+  speechSynthesis.addEventListener('voiceschanged', () => { if (document.body.dataset.view === 'interests') drawInterests(); });
+}
 
 function burst(x, y) {
   if (still) return;
@@ -604,6 +619,11 @@ function drawInterests() {
     b.onclick = () => { state.mute = name === 'off'; save(); drawInterests(); sfx('like'); };
     return b;
   }));
+  // The voice for Listen: every English voice this device has, best first, with a sample to judge by ear.
+  const pick = h('select', { className: 'btn', ariaLabel: 'Voice for Listen' }, ...(canSpeak ? voices() : []).map((v, i) => h('option', { value: v.name, textContent: v.name.replace(/Microsoft |Online |\(Natural\) - /g, '').trim(), selected: state.voice ? v.name === state.voice : !i })));
+  pick.onchange = () => { state.voice = pick.value; save(); speechSynthesis.cancel(); say('This is how I will read to you. Calm, and not in a hurry.'); };
+  const sample = btn('sample', 'Play a sample', 'btn');
+  sample.onclick = () => { speechSynthesis.cancel(); say('This is how I will read to you. Calm, and not in a hurry.'); };
   const leaning = RH.lead(state);
   $('#interests').replaceChildren(h('div', { className: 'col' },
     h('h1', { textContent: 'Your interests' }),
@@ -620,6 +640,7 @@ function drawInterests() {
         h('div', { className: 'panel' }, h('h2', { textContent: 'Topics the rest comes from' }), topicChips(() => {})),
         h('div', { className: 'panel danger' }, h('h2', { textContent: leaning ? `Look, tinted for ${leaning}` : 'Look' }), look),
         h('div', { className: 'panel danger' }, h('h2', { textContent: 'Sound' }), sound),
+        canSpeak && pick.options.length && h('div', { className: 'panel danger' }, h('h2', { textContent: 'Voice for Listen' }), h('div', { className: 'topics' }, pick, sample)),
         h('div', { className: 'panel danger' }, h('p', { textContent: 'Wipes your interests, your saved ideas and what you have already seen.' }), reset))),
     h('p', { className: 'credit' }, 'Words and pictures from Wikipedia, CC BY-SA.')));
 }
