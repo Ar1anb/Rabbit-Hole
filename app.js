@@ -174,8 +174,12 @@ function speak(card) {
   last.onend = () => setTimeout(() => { if (saying === last && listening) step(1); }, 900);
 }
 // English voices, best first: the neural ones (Edge "Natural", Apple "Premium" / "Enhanced" / Siri) sound human, the rest robotic.
-const voices = () => speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang))
-  .map((v) => [(/Natural/.test(v.name) ? 3 : /Premium|Enhanced|Siri/.test(v.name) ? 2 : /Google/.test(v.name) ? 1 : 0), v]).sort((a, b) => b[0] - a[0]).map((x) => x[1]);
+// Apple also lists joke and 1980s robot voices (Albert, Bells, Zarvox...) and they sort first by alphabet: those are left out.
+const JOKE = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Fred|Good News|Jester|Junior|Kathy|Organ|Superstar|Ralph|Trinoids|Whisper|Zarvox|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley)\b/;
+const grade = (n) => /Natural/.test(n) ? (/Ava|Andrew|Emma|Brian/.test(n) ? 7 : 6) + (/Multilingual/.test(n) ? 0.5 : 0)
+  : /Premium/.test(n) ? 5 : /Enhanced|Siri/.test(n) ? 4 : /Google/.test(n) ? 2 : /Samantha|Daniel|Karen|Moira|Tessa/.test(n) ? 1 : 0;
+const voices = () => speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang) && !JOKE.test(v.name))
+  .map((v) => [grade(v.name) + (/^en[-_](US|GB)/i.test(v.lang) ? 0.2 : 0), v]).sort((a, b) => b[0] - a[0]).map((x) => x[1]);
 // Read sentence by sentence, a little slower than the default, so there is a breath between sentences. Returns the last utterance.
 function say(text) {
   const all = voices(), voice = all.find((v) => v.name === state.voice) || all[0] || null;
