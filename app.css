@@ -1,0 +1,347 @@
+/* Rabbit Hole. Style: taste-skill "Editorial greeting" (seed 1342246928). The serif has one job: the idea's title. */
+/* --hue is set by app.js from the topic the reader leans to most; it tints the accent and the card. */
+:root {
+  --hue: 185; color-scheme: dark;
+  --ground: #0a0a0a; --surface: oklch(0.19 0.012 var(--hue)); --raised: #222222; --active: #2c2c2c;
+  --border: #2a2a2a; --control: #474747;
+  --text: #f3f3f1; --muted: #a9a9a5; --accent: oklch(0.8 0.1 var(--hue)); --negative: #f0806e;
+  --primary: #f3f3f1; --on-primary: #111111; --primary-hover: #d6d6d2;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #ffffff; --surface: oklch(0.978 0.006 var(--hue)); --raised: #ffffff; --active: #ededed;
+  --border: #eaeaea; --control: #d9d9d6;
+  --text: #1f201d; --muted: #636361; --accent: oklch(0.46 0.09 var(--hue)); --negative: #b42318;
+  --primary: #1f201d; --on-primary: #ffffff; --primary-hover: #3a3b37;
+}
+:root {
+  --font: "Instrument Sans", Inter, system-ui, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  /* The card is the sheet's 12-column grid: 12 x 77 + 11 x 16 = 1100; picture 5 columns (449) + 16 + text 7 columns (635). */
+  --col: 1100px; --sheet-h: 760px; --title: 48px; --read: 18px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { display: grid; grid-template-columns: 224px minmax(0, 1fr); background: var(--ground); color: var(--text); font: 14px/20px var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Sidebar: on the page ground, nothing between it and the canvas */
+.side { height: 100dvh; padding: 20px 12px 16px; display: flex; flex-direction: column; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; font-size: 16px; font-weight: 600; text-decoration: none; }
+.brand img { flex: none; filter: invert(1); } /* the logo file is dark ink; flipped for the dark look */
+[data-theme="light"] .brand img { filter: none; }
+#search { margin: 20px 0 14px; }
+#q { width: 100%; height: 36px; padding: 0 14px; border: 1px solid var(--control); border-radius: 999px; background: var(--raised); }
+#q::placeholder { color: var(--muted); }
+.note { margin: 8px 8px 0; font-size: 12px; line-height: 16px; color: var(--muted); }
+.note:empty { display: none; }
+nav { display: grid; gap: 2px; }
+nav a { height: 32px; padding: 0 10px; display: flex; align-items: center; border-radius: 8px; text-decoration: none; color: var(--muted); }
+nav a:hover { color: var(--text); }
+nav a[aria-current] { background: var(--active); color: var(--text); }
+.trail { margin-top: 32px; min-height: 0; }
+.trail h2 { margin: 0 10px 8px; font-size: 12px; font-weight: 400; color: var(--muted); }
+.trail ol { list-style: none; margin: 0; padding: 0; }
+.trail button { width: 100%; height: 30px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border: 0; border-radius: 8px; background: none; color: var(--muted); font-size: 13px; text-align: left; cursor: pointer; }
+.trail button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trail button::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--control); }
+.trail button:hover { color: var(--text); }
+.trail li:last-child button { color: var(--text); }
+.trail li:last-child button::before { background: var(--accent); }
+.credit { margin: auto 10px 0; padding-top: 16px; font-size: 12px; line-height: 16px; color: var(--muted); }
+
+/* Canvas */
+main { position: relative; height: 100dvh; }
+.view { position: absolute; inset: 0; overflow-y: auto; }
+.view[inert] { visibility: hidden; }
+.view:focus-visible { outline: none; } /* opening the app on #map focuses the whole screen; a ring round all of it says nothing */
+.feed { scroll-snap-type: y mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior: contain; }
+.card { height: 100%; padding: 36px 56px; display: grid; place-items: center; scroll-snap-align: start; scroll-snap-stop: always; }
+.sheet { width: min(var(--col), 100%); height: min(var(--sheet-h), 100%); display: grid; grid-template: "pic text" minmax(0, 1fr) "pic deeper" auto / 449fr 635fr; column-gap: 16px; background: var(--surface); border-radius: 22px; overflow: hidden; }
+.pic { grid-area: pic; position: relative; margin: 0; min-height: 0; overflow: hidden; background: var(--active); }
+.pic img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
+/* A card's pictures are the article's own: the caption of the one showing, and a counter that turns to the next */
+.pic figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 16px 12px; background: rgb(10 10 10 / .7); color: #f3f3f1; font-size: 13px; line-height: 18px; }
+.pic figcaption span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.pic .more { position: absolute; right: 10px; top: 10px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: rgb(10 10 10 / .7); color: #f3f3f1; font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.pic .more:hover { background: rgb(10 10 10 / .9); }
+.text { grid-area: text; min-height: 0; padding: 40px 40px 0 24px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.because { margin: 0 0 14px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.because i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.because b { font-weight: 500; color: var(--text); }
+.card h2 .w { display: inline-block; white-space: nowrap; } .card h2 .g { display: inline-block; }
+.card h2 { margin: 0; font: 400 var(--title)/1.04 var(--serif); letter-spacing: -0.01em; text-wrap: balance; }
+.card h2.long { font-size: calc(var(--title) * 0.8); }
+.desc { margin: 10px 0 0; font-size: 16px; line-height: 22px; color: var(--muted); }
+.extract { margin: 20px 0 0; font-size: var(--read); line-height: 1.55; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 9; overflow: hidden; }
+.acts { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: none; }
+.btn { height: 38px; padding: 0 18px; border: 1px solid var(--control); border-radius: 999px; background: var(--raised); font-weight: 500; white-space: nowrap; cursor: pointer; transition: transform .12s, background-color .12s; }
+.btn:hover { background: var(--active); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn.primary:hover { background: var(--primary-hover); }
+.btn.primary[aria-pressed="true"], .btn[aria-pressed="true"] { background: var(--raised); border-color: var(--accent); color: var(--accent); }
+.btn.quiet { border-color: transparent; background: none; color: var(--muted); }
+.btn.quiet:hover { background: var(--active); color: var(--text); }
+.btn:disabled { background: var(--active); border-color: var(--active); color: var(--muted); cursor: default; }
+.link { margin-left: auto; color: var(--muted); text-underline-offset: 3px; }
+.link:hover { color: var(--text); }
+
+/* A card with no picture keeps its own height instead of stretching over blank space */
+.nopic .sheet, .start .sheet { height: auto; max-height: min(var(--sheet-h), 100%); }
+
+/* Go deeper: chips under a picture card; a list of rows beside a card with no picture */
+.deeper { grid-area: deeper; padding: 22px 40px 32px 24px; }
+.deeper h3 { margin: 0 0 10px; font-size: 13px; font-weight: 400; color: var(--muted); }
+.deeper ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-height: 80px; overflow: hidden; }
+.deeper button { height: 36px; max-width: 100%; padding: 0 14px; border: 1px solid var(--control); border-radius: 999px; background: var(--raised); cursor: pointer; text-align: left; transition: transform .12s, background-color .12s; }
+.deeper button:hover { background: var(--active); }
+.deeper button:active { transform: scale(.97); }
+.deeper button span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deeper small { display: none; }
+@media (min-width: 900px) {
+  .nopic .sheet { grid-template: "text deeper" minmax(0, 1fr) / 635fr 449fr; }
+  .nopic .text { padding: 40px 24px 40px 48px; }
+  .nopic .deeper { align-self: center; padding: 40px 40px 40px 0; }
+  .nopic .deeper ul { display: grid; max-height: none; }
+  .nopic .deeper button { width: 100%; height: 63px; border-color: var(--border); border-radius: 14px; }
+  .nopic .deeper span { font-weight: 500; }
+  .nopic .deeper small { display: block; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nopic .sheet:not(:has(.deeper:not([hidden]))), .start .sheet { grid-template: "text" minmax(0, 1fr) / 1fr; }
+  .nopic .sheet:not(:has(.deeper:not([hidden]))) .text, .start .text { padding: 48px 15% 48px 48px; }
+}
+
+/* First run and the loading card */
+.topics { margin: 28px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.start .extract { max-width: 34em; }
+.start .btn.primary { align-self: flex-start; }
+.pic.blank { background: var(--active); }
+.tail .text { justify-content: flex-start; padding-top: 56px; color: var(--muted); }
+.tail .text p { margin: 0 0 24px; font-size: 16px; }
+.tail .btn { align-self: flex-start; color: var(--text); }
+.bars { display: grid; gap: 12px; }
+.bars i { height: 18px; border-radius: 6px; background: var(--active); }
+.bars i:first-child { height: 46px; width: 60%; margin-bottom: 10px; }
+.bars i:last-child { width: 72%; }
+
+/* Next and previous, on the side the feed moves along */
+.step { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; gap: 8px; }
+.step button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--control); border-radius: 50%; background: var(--raised); cursor: pointer; transition: transform .12s, background-color .12s; }
+.step button:hover { background: var(--active); }
+.step button:active { transform: scale(.94); }
+body:not([data-view="feed"]) .step, body:has(.start) .step { display: none; }
+/* Listen sits with them: it moves the feed too */
+#listen { margin-bottom: 8px; }
+#listen .stop, #listen[aria-pressed="true"] .play { display: none; }
+#listen[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+#listen[aria-pressed="true"] .stop { display: inline; }
+
+/* Map: every idea you stopped on, hung under the one that led to it. The lines are the tunnels. */
+.burrow { --tunnel: color-mix(in oklab, var(--accent) 45%, var(--ground)); overflow-x: auto; padding-bottom: 8px; }
+.burrow section + section { margin-top: 28px; }
+.burrow h2 { margin: 0 0 4px; font: 400 28px/1.15 var(--serif); }
+.burrow ul { list-style: none; margin: 0; padding: 0 0 0 26px; }
+.burrow section > ul { padding-left: 10px; }
+.burrow li { position: relative; padding-left: 20px; white-space: nowrap; }
+.burrow li::before { content: ""; position: absolute; left: 0; top: 0; width: 16px; height: 20px; border: solid var(--tunnel); border-width: 0 0 2px 2px; border-radius: 0 0 0 12px; }
+.burrow li:not(:last-child)::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 2px solid var(--tunnel); }
+.burrow button { height: 40px; padding: 0 10px; border: 0; border-radius: 8px; background: none; font-size: 15px; cursor: pointer; }
+.burrow button:hover { background: var(--active); }
+.burrow li.deep::before { border-color: var(--accent); }
+.burrow li.deep > button { color: var(--accent); }
+
+/* Saved and Your interests */
+.page { padding: 56px 56px 48px; }
+.page .col { width: min(var(--col), 100%); margin: 0 auto; }
+.page h1 { margin: 0; font: 400 48px/1.04 var(--serif); letter-spacing: -0.01em; }
+.sub { margin: 10px 0 36px; font-size: 16px; line-height: 22px; color: var(--muted); }
+.panels { display: grid; grid-template-columns: 728fr 356fr; gap: 16px; align-items: start; }
+.panel { padding: 20px; background: var(--surface); border-radius: 22px; }
+.panel h2 { margin: 0 0 14px; font-size: 14px; font-weight: 600; }
+.panel .topics { margin: 0; }
+.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rows li { min-height: 63px; padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 14px; background: var(--raised); border: 1px solid var(--border); border-radius: 14px; }
+.rows img, .rows .noimg { flex: none; width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: var(--active); }
+.rows .name { flex: 1; min-width: 0; }
+.rows .name a, .rows .name b { display: block; font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.rows .name small { display: block; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows .bar { flex: none; width: 34%; height: 6px; border-radius: 3px; background: var(--active); }
+.rows .bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.empty { margin: 0; padding: 20px; border: 1px dashed var(--control); border-radius: 14px; color: var(--muted); }
+.danger { margin-top: 16px; }
+.danger p { margin: 0 0 14px; color: var(--muted); }
+.danger .btn[name="reset"] { color: var(--negative); }
+.page .credit { display: none; }
+
+/* Ultrawide: the same card, larger */
+@media (min-width: 1900px) and (min-height: 1000px) {
+  :root { --col: 1400px; --sheet-h: 920px; --title: 60px; --read: 20px; }
+}
+@media (max-height: 800px) { .extract { -webkit-line-clamp: 6; } }
+
+/* Tablet and phone: the sidebar folds into a top bar and a bottom bar; the card stacks */
+@media (max-width: 899px) {
+  body { grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr) 56px; }
+  .side { height: 56px; padding: 0 16px; flex-direction: row; align-items: center; gap: 12px; overflow: visible; position: relative; }
+  .brand { padding: 0; } .brand span { display: none; }
+  #search { flex: 1; margin: 0; } #q { height: 40px; font-size: 16px; }
+  .note { position: absolute; z-index: 2; left: 16px; right: 16px; top: 56px; margin: 0; padding: 12px 14px; background: var(--primary); color: var(--on-primary); border-radius: 14px; font-size: 14px; line-height: 20px; }
+  nav { position: fixed; z-index: 2; left: 0; right: 0; bottom: 0; height: 56px; padding: 6px 16px; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--ground); }
+  nav a { height: 44px; justify-content: center; }
+  .side .trail, .side .credit, #prev, #next { display: none; }
+  /* Listen moves up into the top bar, right of the counter */
+  .step { position: fixed; z-index: 3; top: calc(env(safe-area-inset-top) + 8px); right: max(16px, env(safe-area-inset-right)); transform: none; }
+  #listen { margin: 0; }
+  .pic .more { height: 40px; padding: 0 14px; }
+  main { height: auto; grid-row: 2; }
+  .card { padding: 4px 16px 8px; }
+  .sheet, .nopic .sheet { height: 100%; grid-template: "pic" 36% "text" minmax(0, 1fr) "deeper" auto / minmax(0, 1fr); }
+  .nopic .sheet, .start .sheet, .tail .sheet { grid-template-areas: "text" "text" "deeper"; }
+  .tail .pic { display: none; }
+  :root { --title: 34px; --read: 16px; }
+  .text { padding: 20px 20px 0; justify-content: flex-start; }
+  .because { margin-bottom: 8px; }
+  .desc { margin-top: 6px; font-size: 14px; line-height: 20px; }
+  .extract { margin-top: 12px; -webkit-line-clamp: 5; }
+  .nopic .extract { -webkit-line-clamp: 12; }
+  .acts { margin-top: auto; padding-top: 14px; }
+  .btn { height: 44px; padding: 0 16px; }
+  .link { margin-left: 0; padding: 12px 4px; }
+  .deeper { padding: 12px 0 16px 20px; }
+  .deeper h3 { margin-bottom: 8px; }
+  .deeper ul { flex-wrap: nowrap; overflow-x: auto; max-height: none; padding-right: 20px; scrollbar-width: none; }
+  .deeper li { flex: none; max-width: 70%; }
+  .deeper button { height: 44px; }
+  .page { padding: 24px 16px 32px; }
+  .page h1 { font-size: 34px; }
+  .sub { margin-bottom: 24px; }
+  .panels { grid-template-columns: minmax(0, 1fr); }
+  .rows .bar { width: 22%; }
+  .page .credit { display: block; margin: 24px 4px 0; }
+}
+@media (max-width: 899px) and (min-width: 600px) { .extract { -webkit-line-clamp: 8; } .sheet { grid-template-rows: 42% minmax(0, 1fr) auto; } }
+@media (prefers-reduced-motion: reduce) { .feed { scroll-behavior: auto; } .btn, .step button, .deeper button { transition: none; } }
+
+/* ---- Feel: nothing here is needed to read a card; all travel is dropped under reduced motion ---- */
+@property --hue { syntax: "<number>"; inherits: true; initial-value: 185; }
+:root { transition: --hue 1.2s; --rail: 0px; }
+* { -webkit-tap-highlight-color: transparent; }
+.feed { touch-action: pan-y; }
+
+/* The hole itself, engraved line by line on a canvas behind everything (drawn in app.js) */
+.back { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; background: var(--ground); }
+
+.card { padding-right: calc(56px + var(--rail)); }
+.sheet { position: relative; }
+.extract { color: color-mix(in oklab, var(--text) 70%, var(--surface)); }
+.extract b { font-weight: 400; color: var(--text); }
+
+/* Eight seconds on a card counts as a read; this line is that clock */
+.read { position: absolute; z-index: 1; left: 0; top: 0; width: 100%; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: 0 50%; }
+.card.on .read { animation: fill 8s linear forwards; }
+.card.done .read { animation: none; transform: none; opacity: .35; transition: opacity .6s; }
+@keyframes fill { to { transform: none; } }
+
+/* Counters */
+.stats { margin: 28px 0 0; padding: 0 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats dt { font-size: 12px; line-height: 16px; color: var(--muted); }
+.stats dd { margin: 2px 0 0; font-size: 20px; line-height: 26px; font-variant-numeric: tabular-nums; transform-origin: 0 60%; }
+.stats dd.pop { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { 40% { transform: scale(1.5); } }
+.trail { margin-top: 28px; }
+
+.toast { position: fixed; z-index: 6; left: 50%; bottom: 44px; margin: 0; padding: 12px 20px; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 500; white-space: nowrap; pointer-events: none; opacity: 0; transform: translate(-50%, 16px); transition: opacity .3s, transform .4s cubic-bezier(.2, 1.4, .4, 1); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.burst { position: fixed; z-index: 7; pointer-events: none; }
+.burst i { position: absolute; left: -1px; top: -8px; width: 2.5px; height: 16px; border-radius: 2px; background: var(--accent); animation: fly .7s cubic-bezier(.1, .8, .3, 1) forwards; }
+@keyframes fly { from { transform: rotate(var(--a)) translateY(-6px); } to { transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(.2); opacity: 0; } }
+
+/* Up next: one line under the card; a column of three beside it on a wide screen */
+.upnext { position: absolute; left: 56px; right: 56px; bottom: 6px; height: 24px; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+body:not([data-view="feed"]) .upnext { display: none; }
+.upnext h2 { margin: 0; font-size: 13px; font-weight: 400; }
+.upnext ol { list-style: none; margin: 0; padding: 0; min-width: 0; }
+.upnext li:not(:first-child), .upnext img, .upnext .noimg, .upnext small { display: none; }
+.upnext button { max-width: 100%; padding: 2px 6px; display: flex; align-items: center; border: 0; border-radius: 6px; background: none; cursor: pointer; text-align: left; color: var(--text); }
+.upnext .name { min-width: 0; }
+.upnext .noimg { place-items: center; font: 400 30px/1 var(--serif); color: var(--muted); }
+.upnext b { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upnext button:hover b { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .card.on .pic img { animation: kenburns 26s ease-out infinite alternate; }
+  .card.on .text > *, .card.on .deeper li, .upnext li { animation: rise .55s cubic-bezier(.2, .7, .2, 1) backwards; }
+  /* The title is cut letter by letter instead of rising */
+  .card.on .text > h2 { animation: none; }
+  .card.on h2 .g { animation: cut .16s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(var(--i) * 26ms + 90ms); }
+  @keyframes cut { from { opacity: 0; transform: translateY(-.12em) scale(1.25); } }
+  .card.on .pic { animation: press .7s cubic-bezier(.2, .7, .2, 1) backwards; }
+  @keyframes press { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+  /* The next picture of the same idea is pressed in over the last one */
+  .card.on .pic img.turn { animation: press .8s cubic-bezier(.2, .7, .2, 1) backwards, kenburns 26s ease-out infinite alternate; }
+  .burrow li { animation: rise .5s cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(min(var(--i), 40) * 16ms); }
+  .card.on .text > :nth-child(2) { animation-delay: .06s; }
+  .card.on .text > :nth-child(3) { animation-delay: .12s; }
+  .card.on .text > :nth-child(4) { animation-delay: .18s; }
+  .card.on .text > :nth-child(5) { animation-delay: .26s; }
+  .card.on .deeper li:nth-child(2) { animation-delay: .05s; } .card.on .deeper li:nth-child(3) { animation-delay: .1s; }
+  .card.on .deeper li:nth-child(4) { animation-delay: .15s; } .card.on .deeper li:nth-child(5) { animation-delay: .2s; }
+  .upnext li:nth-child(2) { animation-delay: .06s; } .upnext li:nth-child(3) { animation-delay: .12s; }
+  .btn[aria-pressed="true"] { animation: pop .4s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } }
+  @keyframes kenburns { from { transform: scale(1.001); } to { transform: scale(1.1) translateY(-1.5%); } }
+}
+
+/* Ultrawide: the card moves left of centre and the next three ideas take the right */
+@media (min-width: 1900px) and (min-height: 1000px) {
+  :root { --rail: 420px; }
+  .upnext { left: auto; right: 80px; bottom: auto; top: 50%; transform: translateY(-50%); width: 340px; height: auto; display: block; font-size: 14px; }
+  .upnext h2 { margin: 0 0 12px 6px; }
+  .upnext ol { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .upnext li:not(:first-child), .upnext small { display: block; }
+  .upnext .noimg { display: grid !important; }
+  .upnext img, .upnext .noimg { display: block; flex: none; width: 60px; height: 60px; border-radius: 10px; object-fit: cover; background: var(--active); }
+  .upnext button { width: 100%; height: 80px; padding: 10px; gap: 14px; background: var(--surface); border-radius: 18px; transition: transform .15s; }
+  .upnext button:hover { transform: translateX(-4px); }
+  .upnext button:hover b { text-decoration: none; }
+  .upnext small { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (min-width: 2600px) and (min-height: 1300px) {
+  /* 3440 x 1440 and up: the 2560 layout, everything 1.3 times larger */
+  body { grid-template-columns: 292px minmax(0, 1fr); }
+  .side, main, .toast { zoom: 1.3; }
+  .side, main { height: calc(100dvh / 1.3); }
+}
+
+/* Phone: room for the notch and the home bar, one counter in the top bar */
+@media (max-width: 899px) {
+  body { height: 100dvh; padding-top: env(safe-area-inset-top); grid-template-rows: 56px minmax(0, 1fr) calc(56px + env(safe-area-inset-bottom)); }
+  nav { height: calc(56px + env(safe-area-inset-bottom)); padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+  .stats { margin: 0; padding: 0; display: block; flex: none; }
+  .stats div:not(:first-child) { display: none; }
+  .stats div { display: flex; flex-direction: row-reverse; align-items: baseline; gap: 5px; }
+  .stats dd { margin: 0; font-size: 16px; }
+  .card { padding-right: 16px; }
+  .upnext { display: none; }
+  .toast { bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .side { padding-left: max(16px, env(safe-area-inset-left)); padding-right: calc(max(16px, env(safe-area-inset-right)) + 52px); }
+}
+
+/* Read all: the whole text, scrolling if it must; app.js shows the button only when lines are cut */
+.card.open .extract { display: block; -webkit-line-clamp: unset; overflow-y: auto; }
+@media (max-width: 899px) {
+  /* on a phone the words also take the room of the picture and the chips */
+  .card.open .sheet { grid-template-areas: "text" "text" "deeper"; }
+  .card.open .pic, .card.open .deeper { display: none; }
+}
+/* A phone inside a browser or a viewer app is short: less picture, no second description, so more of the text shows */
+@media (max-width: 899px) and (max-height: 740px) {
+  .sheet { grid-template-rows: 28% minmax(0, 1fr) auto; }
+  .desc, .deeper h3 { display: none; }
+  .btn { height: 40px; }
+}

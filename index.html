@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rabbit Hole</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:wght@400&display=swap" rel="stylesheet">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-title" content="Rabbit Hole">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<canvas class="back" aria-hidden="true"></canvas>
+<aside class="side">
+  <a class="brand" href="#feed" aria-label="Rabbit Hole, back to the feed">
+    <img src="logo.svg" width="30" height="28" alt="">
+    <span>Rabbit Hole</span>
+  </a>
+  <form id="search" role="search">
+    <label class="sr" for="q">Search any idea</label>
+    <input id="q" type="search" placeholder="Search any idea" autocomplete="off" enterkeyhint="search">
+    <p id="search-note" class="note" aria-live="polite"></p>
+  </form>
+  <nav aria-label="Screens">
+    <a href="#feed">Feed</a>
+    <a href="#map">Map</a>
+    <a href="#saved">Saved</a>
+    <a href="#interests">Interests</a>
+  </nav>
+  <dl class="stats" aria-label="Your reading">
+    <div><dt>Today</dt><dd id="s-today">0</dd></div>
+    <div><dt>Streak</dt><dd id="s-streak">0</dd></div>
+    <div><dt>Depth</dt><dd id="s-depth">0</dd></div>
+  </dl>
+  <section class="trail" aria-labelledby="trail-h" hidden>
+    <h2 id="trail-h">Your trail</h2>
+    <ol id="trail"></ol>
+  </section>
+  <p class="credit">Words and pictures from <a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>, CC BY-SA.</p>
+</aside>
+
+<main>
+  <section id="feed" class="view feed" aria-labelledby="feed-h">
+    <h1 id="feed-h" class="sr">Feed</h1>
+    <article class="card tail" id="tail" hidden>
+      <div class="sheet">
+        <div class="pic blank"></div>
+        <div class="text">
+          <p id="tail-note" role="status">Finding the next idea</p>
+          <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <button class="btn" id="retry" type="button" hidden>Try again</button>
+        </div>
+      </div>
+    </article>
+  </section>
+  <section id="map" class="view page" inert></section>
+  <section id="saved" class="view page" inert></section>
+  <section id="interests" class="view page" inert></section>
+  <aside class="upnext" aria-labelledby="upnext-h" hidden>
+    <h2 id="upnext-h">Up next</h2>
+    <ol id="upnext"></ol>
+  </aside>
+  <div class="step">
+    <button id="listen" type="button" aria-pressed="false" aria-label="Listen: read the ideas aloud, one after another" title="Listen (p)"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path class="play" d="M5 3.5v9l7.5-4.5z" fill="currentColor"/><path class="stop" d="M4.5 4.5h7v7h-7z" fill="currentColor"/></svg></button>
+    <button id="prev" type="button" aria-label="Previous idea" title="Previous (up arrow)"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 10l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="next" type="button" aria-label="Next idea" title="Next (down arrow)"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</main>
+<p id="toast" class="toast" role="status"></p>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
