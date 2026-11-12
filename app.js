@@ -216,11 +216,9 @@ function burst(x, y) {
 // ---- cards ----
 const sig = (card) => ({ title: card._page.title, seed: card._because.seed, topic: state.of[card._page.title] });
 
-// The look caters to the reader: dark or light as chosen, and tinted toward the topic they lean to most.
-const HUES = { Philosophy: 185, History: 65, Art: 355, Psychology: 235, Science: 150, Economics: 110, Literature: 35, Politics: 255, Religion: 85, Mathematics: 210, Music: 335, Architecture: 165 };
+// The look: dark (oxblood and terracotta) or light (parchment), as chosen. One fixed colourway; the paintings bring the colour.
 function applyLook() {
   document.documentElement.dataset.theme = state.theme === 'light' ? 'light' : 'dark';
-  document.documentElement.style.setProperty('--hue', HUES[RH.lead(state)] || 185);
 }
 applyLook();
 const isSaved = (title) => state.saved.some((x) => x.title === title);
@@ -266,13 +264,14 @@ function makeCard(p, because) {
         h('p', { className: 'extract' }, h('b', { textContent: text.slice(0, cut) }), text.slice(cut)),
         h('div', { className: 'shelf', hidden: true }),
         h('div', { className: 'under' },
-          Object.assign(act('more', 'Read full text'), { hidden: true }), // sits where the text is cut; fit() shows it
-          act('books', 'Book recommendations')),
-        h('div', { className: 'acts' },
-          act('like', 'Show more like this'),
-          act('save', isSaved(p.title) ? 'Saved for later' : 'Save for later', isSaved(p.title)),
-          act('less', 'Show less like this')),
-        h('a', { className: 'wiki', href: RH.link(p.title), target: '_blank', rel: 'noopener', textContent: 'Wikipedia ↗', title: 'Read the whole article on Wikipedia' })),
+          act('more', 'Read more'),
+          h('a', { className: 'wiki', href: RH.link(p.title), target: '_blank', rel: 'noopener', textContent: 'Open on Wikipedia ↗', title: 'Read the whole article on Wikipedia' })), // shown once Read more is open
+        h('p', { className: 'shown' })), // names the picture showing; showPic() fills it
+      h('div', { className: 'acts' },
+        act('like', 'Show more like this'),
+        act('save', isSaved(p.title) ? 'Saved for later' : 'Save for later', isSaved(p.title)),
+        act('less', 'Show less like this'),
+        act('books', 'Book recom­mendations')),
       h('div', { className: 'deeper', hidden: true }, h('h3', { textContent: 'Go deeper' }), h('ul'))));
   el._page = p; el._because = because; el._say = p.title + '. ' + text;
   watch.observe(el);
@@ -290,8 +289,7 @@ function fit(card) {
     if (!open) ex.style.webkitLineClamp = Math.max(1, Math.floor((ex.clientHeight + 1) / line));
     return ex.scrollHeight > ex.clientHeight + 2;
   };
-  more.hidden = !open;
-  if (!open && whole()) { more.hidden = false; whole(); } // the button takes room itself, so measure again with it showing
+  whole(); // Read more is always there: it also holds the way to Wikipedia
 }
 // Room changes when the chips, a picture or the fonts arrive, and when the window does; a frame later keeps the observer out of its own way.
 const fitter = new ResizeObserver((es) => requestAnimationFrame(() => { for (const e of es) fit(e.target.closest('.card')); }));
@@ -359,7 +357,8 @@ function showPic(card, i) {
     }
     if (!same) { if (old.length) img.className = 'turn'; fig.append(img); }
     card._at = at;
-    fig.append(...[pic.caption && h('figcaption', null, h('span', { textContent: pic.caption })),
+    $('.shown', card).textContent = pic.caption ? 'Shown: ' + pic.caption : '';
+    fig.append(...[
       pics.length > 1 && h('button', { type: 'button', name: 'pic', className: 'more', textContent: `${at + 1} / ${pics.length} · Next ›`, ariaLabel: 'Next picture', title: 'Next picture (right arrow)' }),
       pics.length > 1 && h('button', { type: 'button', name: 'picback', className: 'more prev', textContent: '‹ Previous', ariaLabel: 'Previous picture', title: 'Previous picture (left arrow)' })].filter(Boolean));
     if (isNew) drawNext(); // Up next shows it too
@@ -518,12 +517,12 @@ feed.addEventListener('click', (e) => {
     b.closest('li').remove();
   } else if (b.name === 'pic') flip(card, 1);
   else if (b.name === 'picback') flip(card, -1);
-  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Hide full text' : 'Read full text'); fit(card); }
+  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Read less' : 'Read more'); fit(card); }
   else if (b.name === 'books') {
     const more = $('button[name=more]', card);
-    if (on && card.classList.contains('open')) { card.classList.remove('open'); more.ariaPressed = 'false'; relabel(more, 'Read full text'); } // one or the other
+    if (on && card.classList.contains('open')) { card.classList.remove('open'); more.ariaPressed = 'false'; relabel(more, 'Read more'); } // one or the other
     card.classList.toggle('books', on); $('.shelf', card).hidden = !on;
-    b.ariaPressed = String(on); relabel(b, on ? 'Back to the text' : 'Book recommendations');
+    b.ariaPressed = String(on); relabel(b, on ? 'Back to the text' : 'Book recom­mendations');
     if (on) loadBooks(card);
     fit(card);
   }
@@ -642,7 +641,6 @@ function drawInterests() {
   pick.onchange = () => { state.voice = pick.value; save(); speechSynthesis.cancel(); say('This is how I will read to you. Calm, and not in a hurry.'); };
   const sample = btn('sample', 'Play a sample', 'btn');
   sample.onclick = () => { speechSynthesis.cancel(); say('This is how I will read to you. Calm, and not in a hurry.'); };
-  const leaning = RH.lead(state);
   $('#interests').replaceChildren(h('div', { className: 'col' },
     h('h1', { textContent: 'Your interests' }),
     h('p', { className: 'sub', textContent: list.length ? `The feed is following ${list[0][0]} most. Three ideas in four come from this list.` : 'What the feed has learned about you.' }),
@@ -656,7 +654,7 @@ function drawInterests() {
         })) : h('p', { className: 'empty', textContent: 'Nothing yet. It fills in as you like, save, search and spend time on ideas.' })),
       h('div', null,
         h('div', { className: 'panel' }, h('h2', { textContent: 'Topics the rest comes from' }), topicChips(() => {})),
-        h('div', { className: 'panel danger' }, h('h2', { textContent: leaning ? `Look, tinted for ${leaning}` : 'Look' }), look),
+        h('div', { className: 'panel danger' }, h('h2', { textContent: 'Look' }), look),
         h('div', { className: 'panel danger' }, h('h2', { textContent: 'Sound' }), sound),
         canSpeak && pick.options.length && h('div', { className: 'panel danger' }, h('h2', { textContent: 'Voice for Listen' }), h('div', { className: 'topics' }, pick, sample)),
         h('div', { className: 'panel danger' }, h('p', { textContent: 'Wipes your interests, your saved ideas and what you have already seen.' }), reset))),

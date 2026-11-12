@@ -1,18 +1,21 @@
 /* Rabbit Hole. Style: taste-skill "Editorial greeting" (seed 1342246928). The serif has one job: the idea's title. */
 /* --hue is set by app.js from the topic the reader leans to most; it tints the accent and the card. */
 :root {
-  --hue: 185; color-scheme: dark;
-  --ground: #0a0a0a; --surface: oklch(0.19 0.012 var(--hue)); --raised: #222222; --active: #2c2c2c;
-  --border: #2a2a2a; --control: #474747;
-  --text: #f3f3f1; --muted: #a9a9a5; --accent: oklch(0.8 0.1 var(--hue)); --negative: #f0806e;
-  --primary: #f3f3f1; --on-primary: #111111; --primary-hover: #d6d6d2; --on-accent: #0b0f0e;
+  --hue: 40; color-scheme: dark; /* --hue only colours the engraved hole now */
+  --ground: #140c0b; --surface: #1d1210; --raised: #2c1c19; --active: #3a2622;
+  --border: #3a2824; --control: #7d655d;
+  --text: #f4ece6; --muted: #b5a59e; --accent: #E8866A; --negative: #ff9d8f;
+  --primary: #f4ece6; --on-primary: #140c0b; --primary-hover: #d9c9c1; --on-accent: #1f0d08;
+  /* the wall label a card's words sit on */
+  --paper: #f1e9da; --paper-raised: #fbf6ec; --paper-rule: #d3c6b3; --paper-accent: #9c3d24; --label-ink: #221613; --label-muted: #63534c;
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --ground: #ffffff; --surface: oklch(0.978 0.006 var(--hue)); --raised: #ffffff; --active: #ededed;
-  --border: #eaeaea; --control: #d9d9d6;
-  --text: #1f201d; --muted: #636361; --accent: oklch(0.46 0.09 var(--hue)); --negative: #b42318;
-  --primary: #1f201d; --on-primary: #ffffff; --primary-hover: #3a3b37; --on-accent: #ffffff;
+  --ground: #e9e2d2; --surface: #f3eee2; --raised: #fffdf8; --active: #d6cdb8;
+  --border: #ddd5c3; --control: #8a7f69;
+  --text: #1f1b14; --muted: #5f574a; --accent: #7A2E2E; --negative: #a3271b;
+  --primary: #1f1b14; --on-primary: #fffdf8; --primary-hover: #3f392e; --on-accent: #ffffff;
+  --paper: #fffdf8; --paper-raised: #ffffff; --paper-rule: #ddd5c3; --paper-accent: #7A2E2E; --label-ink: #1f1b14; --label-muted: #5f574a;
 }
 :root {
   --font: "Instrument Sans", Inter, system-ui, sans-serif;
@@ -319,7 +322,7 @@ body:not([data-view="feed"]) .upnext { display: none; }
 
 @media (prefers-reduced-motion: no-preference) {
   /* A picture is engraved in: hatch lines swell until they close up, over the plate or over the picture before it */
-  .card.on .pic img { -webkit-mask-image: repeating-linear-gradient(118deg, #000 0 var(--ink), transparent var(--ink) 8px); mask-image: repeating-linear-gradient(118deg, #000 0 var(--ink), transparent var(--ink) 8px); animation: hatch 1.1s cubic-bezier(.3, .5, .2, 1) backwards, kenburns 26s ease-out infinite alternate; } /* taste-skill-ignore: a mask of hard-edged lines, not a gradient fill */
+  .card.on .pic img { -webkit-mask-image: repeating-linear-gradient(118deg, #000 0 var(--label-ink), transparent var(--label-ink) 8px); mask-image: repeating-linear-gradient(118deg, #000 0 var(--label-ink), transparent var(--label-ink) 8px); animation: hatch 1.1s cubic-bezier(.3, .5, .2, 1) backwards, kenburns 26s ease-out infinite alternate; } /* taste-skill-ignore: a mask of hard-edged lines, not a gradient fill */
   @keyframes hatch { from { --ink: 0px; } }
   /* Each button's mark is cut in stroke by stroke; the plus turns when you ask for more */
   .card.on .act svg > * { stroke-dasharray: 1; animation: draw .55s ease-out .35s backwards; }
@@ -398,4 +401,70 @@ body:not([data-view="feed"]) .upnext { display: none; }
   .sheet { grid-template-rows: 28% minmax(0, 1fr) auto; }
   .desc, .deeper h3 { display: none; }
   .btn { height: 40px; }
+}
+
+/* ---- Wall label look (v12): the picture is the wall, the words sit on a pale label that overlaps it, and the four
+   choices are a row of framed tiles. These rules come last and restate the card's layout at every size. ---- */
+.sheet { grid-template: "pic text" minmax(0, 1fr) "pic acts" auto "pic deeper" auto / 560fr 540fr; column-gap: 0; border-radius: 10px; }
+.card { --lift: 28px; }
+/* inside the label the colour names mean ink on paper, so everything written for the dark card reads right on it */
+.card:not(.tail) .text {
+  --text: var(--label-ink); --muted: var(--label-muted); --accent: var(--paper-accent); --surface: var(--paper); --raised: var(--paper-raised);
+  --active: var(--paper-rule); --border: var(--paper-rule); --control: var(--label-muted); --primary: var(--label-ink); --on-primary: var(--paper); --primary-hover: var(--label-muted); --on-accent: var(--paper);
+  z-index: 1; align-self: center; max-height: calc(100% - var(--lift)); margin: var(--lift) 28px 0 -64px; padding: 26px 28px 20px; justify-content: flex-start;
+  background: var(--paper); color: var(--label-ink); border-radius: 4px; box-shadow: 0 16px 36px rgb(0 0 0 / .45);
+}
+.card.open .text, .card.books .text { align-self: stretch; }
+.card .because { padding-right: 0; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.card .because b { font-weight: 600; }
+.under { margin-top: 10px; gap: 8px; }
+.card .under .act, .card .under .act[aria-pressed="true"] { height: 44px; padding: 0 16px 0 12px; border: 2px solid var(--text); border-radius: 10px; background: none; color: var(--text); font-size: 15px; font-weight: 600; }
+.card .under .act:hover { background: var(--active); }
+.card .under .act:hover .lab { text-decoration: none; }
+.card .wiki { position: static; height: 44px; padding: 0 16px; border: 2px solid var(--text); border-radius: 10px; background: var(--text); color: var(--surface); font-size: 15px; font-weight: 600; }
+.card .wiki:hover { border-color: var(--muted); background: var(--muted); color: var(--surface); }
+.card:not(.open) .wiki { display: none; }
+.shown { flex: none; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shown:empty { display: none; }
+.acts { grid-area: acts; margin: 0; padding: 16px 28px 0 20px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.acts .act { flex-direction: column; justify-content: center; gap: 6px; height: auto; min-height: 76px; padding: 8px 6px; border: 2px solid var(--primary); border-radius: 12px; background: var(--raised); color: var(--text); font-size: 13px; line-height: 16px; font-weight: 600; white-space: normal; text-align: center; -webkit-hyphens: auto; hyphens: auto; overflow-wrap: anywhere; }
+.acts .act:hover { background: var(--active); }
+.acts .act .mark svg { width: 24px; height: 24px; }
+.acts .act.like { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.acts .act.like:hover { background: color-mix(in oklab, var(--accent) 86%, var(--text)); }
+.acts .act.like[aria-pressed="true"], .acts .act.save[aria-pressed="true"], .acts .act.books[aria-pressed="true"] { border-color: var(--accent); background: var(--raised); color: var(--accent); }
+.acts .act.less:hover { color: var(--text); }
+.acts .act.less:disabled { border-color: var(--control); background: none; color: var(--negative); }
+.deeper { padding: 16px 28px 24px 20px; }
+.pic .more { height: 40px; padding: 0 14px; border: 1px solid #f4ece6; border-radius: 6px; background: rgb(20 12 11 / .86); color: #fff; font-size: 14px; font-weight: 600; }
+@media (min-width: 900px) {
+  .card:not(.nopic) .pic .more:not(.prev) { right: 76px; } /* clear of the label that overlaps the picture */
+  .nopic .sheet { grid-template: "text deeper" minmax(0, 1fr) "acts deeper" auto / 635fr 449fr; }
+  .card.nopic .text { align-self: end; margin: 32px 28px 0 32px; padding: 26px 28px 20px; }
+  .nopic .acts { padding: 16px 28px 32px 32px; }
+  .nopic .deeper { padding: 32px 32px 32px 0; }
+  .nopic .sheet:not(:has(.deeper:not([hidden]))), .start .sheet { grid-template: "text" minmax(0, 1fr) "acts" auto / 1fr; }
+  .nopic .sheet:not(:has(.deeper:not([hidden]))) .text { margin: 32px 15% 0 32px; padding: 26px 28px 20px; }
+  .card.start .text { align-self: center; margin: 32px 15% 32px 32px; padding: 28px 30px; }
+  .nopic .sheet:not(:has(.deeper:not([hidden]))) .acts { padding-right: 15%; }
+}
+@media (max-width: 899px) {
+  .card { --lift: -40px; }
+  .card.nopic, .card.start, .card.open, .card.books { --lift: 12px; }
+  .sheet, .nopic .sheet { grid-template: "pic" 34% "text" minmax(0, 1fr) "acts" auto "deeper" auto / minmax(0, 1fr); }
+  .nopic .sheet, .start .sheet, .tail .sheet, .card.open .sheet, .card.books .sheet { grid-template: "text" minmax(0, 1fr) "acts" auto "deeper" auto / minmax(0, 1fr); }
+  .card:not(.tail) .text { align-self: stretch; max-height: none; margin: var(--lift) 12px 0; padding: 16px 18px 12px; }
+  .card.start .text { margin-bottom: 12px; }
+  .under { margin-top: 8px; }
+  .shown { margin-top: 8px; padding-top: 8px; }
+  .acts { padding: 10px 12px 0; gap: 6px; }
+  .acts .act { min-height: 62px; padding: 6px 2px; gap: 3px; border-radius: 10px; font-size: 12px; line-height: 14px; }
+  .acts .act .mark svg { width: 20px; height: 20px; }
+  .deeper { padding: 10px 0 12px 12px; }
+  .card:not(:has(.deeper:not([hidden]))) .acts { padding-bottom: 12px; }
+}
+@media (max-width: 899px) and (min-width: 600px) { .card:not(.nopic, .open, .books, .start, .tail) .sheet { grid-template-rows: 44% minmax(0, 1fr) auto auto; } }
+@media (max-width: 899px) and (max-height: 740px) {
+  .card { --lift: -32px; }
+  .card:not(.nopic, .open, .books, .start, .tail) .sheet { grid-template-rows: 26% minmax(0, 1fr) auto auto; }
 }
