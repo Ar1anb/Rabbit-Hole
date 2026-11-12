@@ -88,7 +88,7 @@
   }
 
   const API = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1' +
-    '&prop=extracts|pageimages|description|pageprops&ppprop=disambiguation&exintro=1&explaintext=1&exlimit=20' +
+    '&prop=extracts|pageimages|description|pageprops&ppprop=disambiguation|wikibase_item&exintro=1&explaintext=1&exlimit=20' +
     '&piprop=thumbnail&pithumbsize=960&pilimit=20';
   // q is { titles: [...] } or { search: 'text', limit, offset }; "morelike:Title" as the search text finds related articles.
   const url = (q) => API + (q.titles
@@ -125,6 +125,29 @@
       const best = (x.srcset || []).slice(-1)[0];
       if (x.type !== 'image' || !x.showInGallery || !best || /\.svg$/i.test(x.title) || !(+(/\/(\d+)px-/.exec(best.src) || [])[1] >= 500)) continue;
       out.push({ src: best.src.replace(/^\/\//, 'https://'), name: x.title.replace(/^File:/, ''), caption: ((x.caption && x.caption.text) || '').replace(/\[\d+\]/g, '').trim(), lead: !!x.leadImage });
+    }
+    return out;
+  }
+
+  // Paintings of the idea, from Wikimedia Commons: files recorded there as reproductions of an artwork (P6243) that
+  // depicts (P180) this very article's subject. Asking by the subject's Wikidata number, not by its name, keeps them on topic.
+  const artUrl = (qid) => 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=12' +
+    '&prop=imageinfo&iiprop=url|size|extmetadata&iiextmetadatafilter=ObjectName|Artist|DateTimeOriginal&iiurlwidth=1920' +
+    '&gsrsearch=' + encodeURIComponent('haswbstatement:P180=' + qid + ' haswbstatement:P6243 filetype:bitmap');
+  function art(json) {
+    const plain = (v) => String((v && v.value) || '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+    const out = [], seen = new Set();
+    for (const p of Object.values((json.query || {}).pages || {}).sort((a, b) => (a.index || 0) - (b.index || 0))) {
+      const i = (p.imageinfo || [])[0], name = (p.title || '').replace(/^File:/, '');
+      if (!i || !i.thumburl || !(i.width >= 1000)) continue;
+      const m = i.extmetadata || {}, title = plain(m.ObjectName).replace(/\s*(title|label) QS:.*$/, '').replace(/^[A-Z][a-z]+: /, '') || name.replace(/\.\w+$/, ''); // Commons adds machine tails and a language prefix
+      const key = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16); // museums upload the same painting several times
+      if (seen.has(key)) continue;
+      seen.add(key);
+      // the "artist" of a recent upload is its photographer, so a name is given only with a year old enough to be the work's
+      const year = +(/\b(1\d{3}|[5-9]\d{2})\b/.exec(plain(m.DateTimeOriginal)) || [])[1], by = plain(m.Artist);
+      out.push({ src: i.thumburl, name, caption: year < 1960 ? [title, !/unknown|anonym|unidentified/i.test(by) && by.length < 60 && by, year].filter(Boolean).join(', ') : title });
+      if (out.length === 4) break;
     }
     return out;
   }
@@ -180,6 +203,6 @@
     return out.sort((a, b) => !a.cover - !b.cover).slice(0, 4); // books with a cover first, otherwise Open Library's order
   }
 
-  const RH = { booksUrl, books, fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media };
+  const RH = { booksUrl, books, fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media, artUrl, art };
   if (typeof module !== 'undefined') module.exports = RH; else root.RH = RH;
 })(this);

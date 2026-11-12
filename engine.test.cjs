@@ -105,6 +105,18 @@ const shelf = RH.books({ numFound: 900, docs: [
 assert.deepStrictEqual(shelf.map((b) => b.title), ['Art of War', 'The Prince']);
 assert.deepStrictEqual(shelf[0], { title: 'Art of War', by: 'A, B', year: '', cover: 'https://covers.openlibrary.org/b/id/9-M.jpg', url: 'https://openlibrary.org/works/3' });
 assert.deepStrictEqual(RH.books({ numFound: 15, docs: [{ title: 'Noise', key: '/works/4' }] }), []);
+const paintings = RH.art({ query: { pages: {
+  2: { index: 2, title: 'File:The Death of Socrates MET LC.jpg', imageinfo: [{ width: 4000, thumburl: 'https://u/b.jpg', extmetadata: { ObjectName: { value: 'The Death of Socrates' } } }] },
+  1: { index: 1, title: 'File:The Death of Socrates MET DP.jpg', imageinfo: [{ width: 4000, thumburl: 'https://u/a.jpg', extmetadata: { ObjectName: { value: 'English: The Death of Socrates title QS:P1476,en:"The Death of Socrates"' }, Artist: { value: '<a href="x">Jacques-Louis David</a>' }, DateTimeOriginal: { value: '1787date QS:P571,+1787' } } }] },
+  3: { index: 3, title: 'File:Small.jpg', imageinfo: [{ width: 400, thumburl: 'https://u/c.jpg' }] },
+  4: { index: 4, title: 'File:Fresco in a church.jpg', imageinfo: [{ width: 3000, thumburl: 'https://u/d.jpg', extmetadata: { Artist: { value: 'A Photographer' }, DateTimeOriginal: { value: '2016-06-21 13:42:19' } } }] },
+} } });
+assert.deepStrictEqual(paintings, [
+  { src: 'https://u/a.jpg', name: 'The Death of Socrates MET DP.jpg', caption: 'The Death of Socrates, Jacques-Louis David, 1787' },
+  { src: 'https://u/d.jpg', name: 'Fresco in a church.jpg', caption: 'Fresco in a church' },
+]);
+assert.deepStrictEqual(RH.art({}), []);
+assert.ok(RH.artUrl('Q913').includes('P180%3DQ913'));
 console.log('engine ok', picks);
 
 if (process.argv.includes('--live')) {

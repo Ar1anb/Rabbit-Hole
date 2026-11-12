@@ -219,7 +219,7 @@ const sig = (card) => ({ title: card._page.title, seed: card._because.seed, topi
 // The look caters to the reader: dark or light as chosen, and tinted toward the topic they lean to most.
 const HUES = { Philosophy: 185, History: 65, Art: 355, Psychology: 235, Science: 150, Economics: 110, Literature: 35, Politics: 255, Religion: 85, Mathematics: 210, Music: 335, Architecture: 165 };
 function applyLook() {
-  document.documentElement.dataset.theme = state.theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = state.theme === 'light' && !state.immerse ? 'light' : 'dark'; // a world of pictures is always the dark look
   document.documentElement.style.setProperty('--hue', HUES[RH.lead(state)] || 185);
 }
 applyLook();
@@ -336,10 +336,12 @@ async function loadBooks(card) {
 async function loadPics(card) {
   const p = card._page, lead = p.thumbnail && p.thumbnail.width >= 400 ? p.thumbnail.source : '';
   try {
-    const r = await fetch(RH.mediaUrl(p.title));
+    const qid = p.pageprops && p.pageprops.wikibase_item; // paintings of the idea, when Commons has any; the card is whole without them
+    const [r, painted] = await Promise.all([fetch(RH.mediaUrl(p.title)), qid ? fetch(RH.artUrl(qid)).then((a) => a.json()).then(RH.art).catch(() => []) : []]);
     if (!r.ok) return;
-    const list = RH.media(await r.json()), first = list.find((x) => x.lead), file = decodeURIComponent(lead);
-    card._pics = (lead ? [{ src: lead, caption: first ? first.caption : '' }, ...list.filter((x) => !x.lead && !file.includes(x.name))] : list).slice(0, 8);
+    const list = RH.media(await r.json()), first = list.find((x) => x.lead), file = decodeURIComponent(lead), same = (a, b) => a.replace(/ /g, '_').includes(b.replace(/ /g, '_'));
+    const rest = list.filter((x) => !x.lead && !same(file, x.name)), extra = painted.filter((a) => !same(file, a.name) && !list.some((x) => same(x.name, a.name)));
+    card._pics = (lead ? [{ src: lead, caption: first ? first.caption : '' }, ...extra, ...rest] : [...list.slice(0, 1), ...extra, ...list.slice(1)]).slice(0, 10);
   } catch { return; } // the card reads fine with what it has
   if (card._pics.length) showPic(card, 0);
 }
@@ -360,11 +362,29 @@ function showPic(card, i) {
     fig.append(...[pic.caption && h('figcaption', null, h('span', { textContent: pic.caption })),
       pics.length > 1 && h('button', { type: 'button', name: 'pic', className: 'more', textContent: `${at + 1} / ${pics.length}`, ariaLabel: 'Next picture', title: 'Next picture (right arrow)' })].filter(Boolean));
     if (isNew) drawNext(); // Up next shows it too
-    if (card === active) turn(card);
+    if (card === active) { turn(card); enter(); }
   };
   img.onerror = () => { pics.splice(at, 1); if (pics.length) showPic(card, at); }; // a picture that will not load is dropped
   img.src = pic.src;
 }
+// Immersive mode: the picture showing on the card in front of you becomes the whole screen behind it, so each swipe
+// is a step into that idea's world. A card with no picture leaves you looking down the hole.
+function enter() {
+  const b = $('#immerse'), pic = state.immerse && document.body.dataset.view === 'feed' && active && active._pics && active._pics[active._at];
+  b.hidden = !state.immerse && !(active && active._pics && active._pics.length);
+  b.ariaPressed = String(!!state.immerse); b.textContent = state.immerse ? 'Exit immersive mode' : 'Immersive mode';
+  if (state.immerse) document.body.dataset.immerse = 'on'; else delete document.body.dataset.immerse;
+  document.body.classList.toggle('inworld', !!pic);
+  const world = $('.world');
+  if (!pic || world.dataset.src === pic.src) return;
+  world.dataset.src = pic.src;
+  for (const o of world.children) { o.classList.remove('in'); setTimeout(() => o.remove(), 1600); } // the old world fades under the new
+  const img = h('img', { alt: '' });
+  img.onload = () => requestAnimationFrame(() => requestAnimationFrame(() => img.classList.add('in')));
+  world.append(img); img.src = pic.src;
+}
+$('#immerse').onclick = () => { state.immerse = !state.immerse; save(); applyLook(); enter(); };
+
 // The pictures of the idea on screen turn over by themselves, slowly.
 function turn(card) {
   clearTimeout(picTimer);
@@ -456,7 +476,7 @@ function activate(card) {
     drawTrail();
     loadDeeper(card);
   }
-  applyLook();
+  applyLook(); enter();
   drawNext(); drawStats();
   save();
   refill();
@@ -692,6 +712,7 @@ function route() {
   if (view === 'map') drawMap();
   if (view === 'saved') drawSaved();
   if (view === 'interests') drawInterests();
+  enter();
 }
 addEventListener('hashchange', route);
 route();

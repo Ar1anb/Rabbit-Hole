@@ -380,6 +380,48 @@ body:not([data-view="feed"]) .upnext { display: none; }
   .side { padding-left: max(16px, env(safe-area-inset-left)); padding-right: calc(max(16px, env(safe-area-inset-right)) + 52px); }
 }
 
+/* ---- Immersive mode: the picture of the idea in front of you is the whole screen (set up in app.js, enter()) ---- */
+.world { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0a0a0a; opacity: 0; transition: opacity .9s; pointer-events: none; }
+body.inworld .world { opacity: 1; }
+/* on a wide screen the world is the picture out of focus, and the picture itself stands whole beside the words */
+.world img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.4s; filter: blur(44px) brightness(.36) saturate(1.25); transform: scale(1.15); }
+.world img.in { opacity: 1; }
+#immerse { position: absolute; z-index: 3; top: 4px; right: 56px; height: 28px; padding: 0 14px; font-size: 13px; background: rgb(10 10 10 / .7); border-color: transparent; color: #f3f3f1; }
+#immerse:hover { background: rgb(10 10 10 / .9); }
+#immerse[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+body:not([data-view="feed"]) #immerse, body:has(.start) #immerse { display: none; }
+body[data-immerse] { --rail: 0px; }
+body[data-immerse] .upnext { display: none; }
+body[data-immerse] .card:not(.nopic, .tail, .start) .sheet { background: none; }
+body[data-immerse] .card:not(.nopic, .tail, .start) .pic { background: none; }
+body[data-immerse] .card:not(.nopic, .tail, .start) :is(.text, .deeper) { background: rgb(12 12 12 / .62); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+@media (min-width: 900px) {
+  body[data-immerse] .card:not(.nopic, .tail, .start) .sheet { width: 100%; height: 100%; grid-template-columns: minmax(0, 1fr) min(540px, 42%); column-gap: 28px; border-radius: 0; overflow: visible; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .pic { overflow: visible; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .pic img { object-fit: contain; object-position: 50% 50%; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .pic figcaption { left: 50%; right: auto; bottom: 0; transform: translateX(-50%); width: max-content; max-width: 100%; border-radius: 12px; text-align: center; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .pic .more { right: 0; top: 0; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .text { border-radius: 22px 22px 0 0; padding-left: 36px; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .deeper { border-radius: 0 0 22px 22px; padding-left: 36px; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .sheet:not(:has(.deeper:not([hidden]))) .text { border-radius: 22px; padding-bottom: 36px; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .read { left: auto; right: 0; width: min(540px, 42%); border-radius: 22px 22px 0 0; }
+}
+@media (max-width: 899px) {
+  /* on a phone the picture is the screen, sharp, and the card's own picture slot is a window onto it */
+  .world img { filter: none; transform: none; object-position: 50% 25%; }
+  /* it is bright at the top and sinks into the dark where the words are, so they need no box of their own */
+  .world::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(8 8 8 / .4) 0, transparent 14%, transparent 27%, rgb(8 8 8 / .8) 50%, rgb(8 8 8 / .93) 100%); }
+  body.inworld .card.on:not(.nopic) .pic img { visibility: hidden; }
+  body.inworld .card.on:not(.nopic) :is(.text, .deeper) { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  body[data-immerse] .card:not(.nopic, .tail, .start) .pic figcaption { background: none; text-shadow: 0 1px 6px #000; }
+  #immerse { top: 14px; left: 26px; right: auto; height: 40px; }
+  body:has(.card.on:is(.open, .books)) #immerse { display: none; }
+}
+@media (max-width: 899px) and (prefers-reduced-motion: no-preference) {
+  .world img.in { animation: wander 40s ease-in-out infinite alternate; }
+  @keyframes wander { from { object-position: 8% 20%; } to { object-position: 92% 30%; } } /* a wide painting is walked across, end to end */
+}
+
 /* Each of a card's three lines is marked with the section of the article it came from, or a dot for the opening */
 .extract small { margin-right: 8px; font-size: 13px; font-weight: 500; color: var(--accent); }
 .extract small:empty { display: inline-block; width: 6px; height: 6px; margin-bottom: 2px; border-radius: 50%; background: var(--accent); vertical-align: middle; }

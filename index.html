@@ -12,10 +12,11 @@
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="Rabbit Hole">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="app.css?v=9">
+<link rel="stylesheet" href="app.css?v=10">
 </head>
 <body>
 <canvas class="back" aria-hidden="true"></canvas>
+<div class="world" aria-hidden="true"></div>
 <aside class="side">
   <a class="brand" href="#feed" aria-label="Rabbit Hole, back to the feed">
     <img src="logo.svg" width="30" height="28" alt="">
@@ -65,6 +66,7 @@
     <h2 id="upnext-h">Up next</h2>
     <ol id="upnext"></ol>
   </aside>
+  <button id="immerse" class="btn" type="button" aria-pressed="false" hidden>Immersive mode</button>
   <div class="step">
     <button id="listen" type="button" aria-pressed="false" aria-label="Listen: read the ideas aloud, one after another" title="Listen (p)"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path class="play" d="M5 3.5v9l7.5-4.5z" fill="currentColor"/><path class="stop" d="M4.5 4.5h7v7h-7z" fill="currentColor"/></svg></button>
     <button id="prev" type="button" aria-label="Previous idea" title="Previous (up arrow)"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 10l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -72,7 +74,7 @@
   </div>
 </main>
 <p id="toast" class="toast" role="status"></p>
-<script src="engine.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="engine.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
