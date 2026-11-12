@@ -219,7 +219,7 @@ const sig = (card) => ({ title: card._page.title, seed: card._because.seed, topi
 // The look caters to the reader: dark or light as chosen, and tinted toward the topic they lean to most.
 const HUES = { Philosophy: 185, History: 65, Art: 355, Psychology: 235, Science: 150, Economics: 110, Literature: 35, Politics: 255, Religion: 85, Mathematics: 210, Music: 335, Architecture: 165 };
 function applyLook() {
-  document.documentElement.dataset.theme = state.theme === 'light' && !state.immerse ? 'light' : 'dark'; // a world of pictures is always the dark look
+  document.documentElement.dataset.theme = state.theme === 'light' ? 'light' : 'dark';
   document.documentElement.style.setProperty('--hue', HUES[RH.lead(state)] || 185);
 }
 applyLook();
@@ -360,36 +360,29 @@ function showPic(card, i) {
     if (!same) { if (old.length) img.className = 'turn'; fig.append(img); }
     card._at = at;
     fig.append(...[pic.caption && h('figcaption', null, h('span', { textContent: pic.caption })),
-      pics.length > 1 && h('button', { type: 'button', name: 'pic', className: 'more', textContent: `${at + 1} / ${pics.length}`, ariaLabel: 'Next picture', title: 'Next picture (right arrow)' })].filter(Boolean));
+      pics.length > 1 && h('button', { type: 'button', name: 'pic', className: 'more', textContent: `${at + 1} / ${pics.length} · Next ›`, ariaLabel: 'Next picture', title: 'Next picture (right arrow)' }),
+      pics.length > 1 && h('button', { type: 'button', name: 'picback', className: 'more prev', textContent: '‹ Previous', ariaLabel: 'Previous picture', title: 'Previous picture (left arrow)' })].filter(Boolean));
     if (isNew) drawNext(); // Up next shows it too
-    if (card === active) { turn(card); enter(); }
+    if (card === active) turn(card);
   };
   img.onerror = () => { pics.splice(at, 1); if (pics.length) showPic(card, at); }; // a picture that will not load is dropped
   img.src = pic.src;
 }
-// Immersive mode: the picture showing on the card in front of you becomes the whole screen behind it, so each swipe
-// is a step into that idea's world. A card with no picture leaves you looking down the hole.
-function enter() {
-  const b = $('#immerse'), pic = state.immerse && document.body.dataset.view === 'feed' && active && active._pics && active._pics[active._at];
-  b.hidden = !state.immerse && !(active && active._pics && active._pics.length);
-  b.ariaPressed = String(!!state.immerse); b.textContent = state.immerse ? 'Exit immersive mode' : 'Immersive mode';
-  if (state.immerse) document.body.dataset.immerse = 'on'; else delete document.body.dataset.immerse;
-  document.body.classList.toggle('inworld', !!pic);
-  const world = $('.world');
-  if (!pic || world.dataset.src === pic.src) return;
-  world.dataset.src = pic.src;
-  for (const o of world.children) { o.classList.remove('in'); setTimeout(() => o.remove(), 1600); } // the old world fades under the new
-  const img = h('img', { alt: '' });
-  img.onload = () => requestAnimationFrame(() => requestAnimationFrame(() => img.classList.add('in')));
-  world.append(img); img.src = pic.src;
-}
-$('#immerse').onclick = () => { state.immerse = !state.immerse; save(); applyLook(); enter(); };
-
-// The pictures of the idea on screen turn over by themselves, slowly.
+// The pictures of the idea on screen turn over by themselves, slowly, until the reader turns one: from then on that card is theirs.
 function turn(card) {
   clearTimeout(picTimer);
-  if (!still && card._pics && card._pics.length > 1) picTimer = setTimeout(() => showPic(card, card._at + 1), 7000);
+  if (!still && !card._mine && card._pics && card._pics.length > 1) picTimer = setTimeout(() => showPic(card, card._at + 1), 7000);
 }
+function flip(card, d) { card._mine = true; clearTimeout(picTimer); showPic(card, card._at + d); }
+// A sideways swipe on a picture turns it, as in a photo album.
+let swipe = null;
+feed.addEventListener('pointerdown', (e) => { swipe = e.target.closest('.pic') && !e.target.closest('button') ? { x: e.clientX, y: e.clientY, card: e.target.closest('.card') } : null; });
+feed.addEventListener('pointerup', (e) => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y, card = swipe.card;
+  swipe = null;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5 && card._pics && card._pics.length > 1) flip(card, dx < 0 ? 1 : -1);
+});
 
 // Puts up to `max` acceptable pages into the feed: after a card, or at the end. Returns the new cards.
 function add(pages, because, after, max, evenIfSeen) {
@@ -476,7 +469,7 @@ function activate(card) {
     drawTrail();
     loadDeeper(card);
   }
-  applyLook(); enter();
+  applyLook();
   drawNext(); drawStats();
   save();
   refill();
@@ -523,7 +516,8 @@ feed.addEventListener('click', (e) => {
     const [el] = add([b._page], { kind: 'deeper', seed: card._page.title }, card, 1);
     if (el) { RH.signal(state, sig(el), RH.W.deeper); el.scrollIntoView(); }
     b.closest('li').remove();
-  } else if (b.name === 'pic') showPic(card, card._at + 1);
+  } else if (b.name === 'pic') flip(card, 1);
+  else if (b.name === 'picback') flip(card, -1);
   else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Hide full text' : 'Read full text'); fit(card); }
   else if (b.name === 'books') {
     const more = $('button[name=more]', card);
@@ -559,7 +553,7 @@ document.addEventListener('keydown', (e) => {
   const name = { l: 'like', s: 'save', x: 'less' }[e.key];
   if (name && active && active._page) $(`button[name=${name}]`, active).click();
   const pic = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  if (pic && active && active._pics && active._pics.length > 1) showPic(active, active._at + pic);
+  if (pic && active && active._pics && active._pics.length > 1) flip(active, pic);
   if (e.key === 'p' && canSpeak && !$('.start')) listen(!listening);
   if (e.key === 'm') { state.mute = !state.mute; save(); toast(state.mute ? 'Sound off' : 'Sound on'); }
 });
@@ -712,7 +706,6 @@ function route() {
   if (view === 'map') drawMap();
   if (view === 'saved') drawSaved();
   if (view === 'interests') drawInterests();
-  enter();
 }
 addEventListener('hashchange', route);
 route();
