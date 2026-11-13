@@ -610,15 +610,51 @@ function begin() {
   state.started = true; tail.hidden = false;
   save();
 }
+// The tutorial: four short screens on the first-run card, once the topics are picked. Interests can show it again.
+// It names the buttons by the words on them, and says "swipe" only to someone holding a touch screen.
+const touch = matchMedia('(pointer: coarse)').matches;
+const TOUR = [
+  ['One idea per screen', touch ? 'Swipe up for the next idea, and down to go back to the one before.' : 'Scroll, or press the down and up arrow keys, to move from one idea to the next. The round arrows on the right do the same.'],
+  ['Teach it what you like', '“Show more like this” makes the feed follow an idea. “Show less like this” drops it. “Save for later” keeps it under Saved.'],
+  ['Go further in', '“Read more” opens the article itself. The “Go deeper” chips under a card lead to the ideas next to it, and “Book recommendations” finds books about it.'],
+  ['Pictures, listening and your map', (touch ? 'Swipe sideways on a picture to turn it, or press “Previous” and “Next”.' : 'Turn a card’s pictures with “Previous” and “Next”, or the left and right arrow keys.') + ' The round play button reads the ideas aloud. Map shows where you have been, and Interests what the feed has learned.'],
+];
+function tour(card, done) {
+  let i = 0;
+  const draw = () => {
+    const [title, text] = TOUR[i], last = i === TOUR.length - 1;
+    const next = h('button', { type: 'button', name: 'tour-next', className: 'btn primary', textContent: last ? 'Start reading' : 'Next' });
+    const skip = !last && h('button', { type: 'button', name: 'tour-skip', className: 'btn', textContent: 'Skip the tutorial' });
+    next.onclick = () => { if (last) done(); else { i++; draw(); } };
+    if (skip) skip.onclick = done;
+    $('.text', card).replaceChildren(
+      h('p', { className: 'because' }, h('i'), `How it works · ${i + 1} of ${TOUR.length}`),
+      h('h2', { textContent: title }),
+      h('p', { className: 'extract', textContent: text }),
+      h('div', { className: 'topics' }, next, skip));
+  };
+  draw();
+}
 function firstRun() {
   const go = h('button', { type: 'button', className: 'btn primary' });
   const sync = () => { go.disabled = !state.topics.length; go.textContent = state.topics.length ? 'Start reading' : 'Pick at least one'; };
-  go.onclick = () => { begin(); refill(); };
-  sync();
-  tail.before(h('article', { className: 'card start' }, h('div', { className: 'sheet' }, h('div', { className: 'text' },
+  const card = h('article', { className: 'card start' }, h('div', { className: 'sheet' }, h('div', { className: 'text' },
     h('h2', { textContent: 'What are you curious about?' }),
     h('p', { className: 'extract', textContent: 'Pick a few to start. From there the feed follows what you read, like and search for.' }),
-    topicChips(sync), go))));
+    topicChips(sync), go)));
+  go.onclick = () => tour(card, () => { begin(); refill(); });
+  sync();
+  tail.before(card);
+}
+// From Interests: the same four screens, put in front of the idea you were on and taken away again at the end.
+function replayTour() {
+  if ($('.start')) return;
+  const card = h('article', { className: 'card start' }, h('div', { className: 'sheet' }, h('div', { className: 'text' })));
+  const back = active && active !== tail ? active : null;
+  (back || tail).before(card);
+  tour(card, () => { card.remove(); if (back) back.scrollIntoView({ behavior: 'instant' }); });
+  location.hash = '#feed'; route();
+  card.scrollIntoView({ behavior: 'instant' });
 }
 
 // ---- Saved and Your interests ----
@@ -637,6 +673,8 @@ function drawSaved() {
 }
 function drawInterests() {
   const list = RH.interests(state, 12), max = list.length ? list[0][1] : 1;
+  const again = btn('tour', 'Show the tutorial again', 'btn');
+  again.onclick = replayTour;
   const reset = btn('reset', 'Start over', 'btn');
   reset.onclick = () => { if (confirm('Forget everything Rabbit Hole has learned about you, including your saved ideas?')) { try { localStorage.removeItem(KEY); } catch { /* nothing stored */ } location.href = location.pathname; } };
   const look = h('div', { className: 'topics' }, ...['dark', 'light'].map((name) => {
@@ -670,6 +708,7 @@ function drawInterests() {
         h('div', { className: 'panel danger' }, h('h2', { textContent: 'Look' }), look),
         h('div', { className: 'panel danger' }, h('h2', { textContent: 'Sound' }), sound),
         canSpeak && pick.options.length && h('div', { className: 'panel danger' }, h('h2', { textContent: 'Voice for Listen' }), h('div', { className: 'topics' }, pick, sample)),
+        h('div', { className: 'panel danger' }, h('h2', { textContent: 'Tutorial' }), h('div', { className: 'topics' }, again)),
         h('div', { className: 'panel danger' }, h('p', { textContent: 'Wipes your interests, your saved ideas and what you have already seen.' }), reset))),
     h('p', { className: 'credit' }, 'Words and pictures from Wikipedia, CC BY-SA.'),
     h('p', { className: 'credit', textContent: 'hello there' })));

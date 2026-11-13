@@ -415,6 +415,9 @@ body:not([data-view="feed"]) .upnext { display: none; }
   background: var(--paper); color: var(--label-ink); border-radius: 4px; box-shadow: 0 16px 36px rgb(0 0 0 / .45);
 }
 /* Read more: the label grows with the article and scrolls inside itself once it is as tall as the card; no empty paper */
+/* the first-run card and the tutorial are a few plain lines: never cut */
+.start .extract { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.start .topics:last-child { margin: 22px 0 0; }
 .long { display: none; }
 .card.open .long { display: block; flex: 0 1 auto; min-height: 0; margin-top: 14px; overflow-y: auto; font-size: var(--read); line-height: 1.55; }
 .card.open:has(.long:not(:empty)) .extract { display: none; }
