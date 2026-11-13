@@ -117,6 +117,11 @@ assert.deepStrictEqual(paintings, [
 ]);
 assert.deepStrictEqual(RH.art({}), []);
 assert.ok(RH.artUrl('Q913').includes('P180%3DQ913'));
+const para = (w) => (w + ' is a sentence long enough to count as a real paragraph of the article, not a label. ').repeat(2).trim();
+const long = RH.longread([para('Opening'), 'Short label', '== Life ==', para('Life'), '=== Early years ===', para('Early'), '== See also ==', para('Links'), '== Thought ==', para('Thought')].join('\n\n'));
+assert.deepStrictEqual(long.map((s) => [s.label, s.paras.length]), [['', 1], ['Life', 2], ['Thought', 1]]);
+assert.strictEqual(RH.longread(para('One') + '\n\n== Two ==\n\n' + para('Two'), 50).length, 1, 'stops once it has enough');
+assert.deepStrictEqual(RH.longread(''), []);
 console.log('engine ok', picks);
 
 if (process.argv.includes('--live')) {

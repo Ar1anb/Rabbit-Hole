@@ -414,7 +414,15 @@ body:not([data-view="feed"]) .upnext { display: none; }
   z-index: 1; align-self: center; max-height: calc(100% - var(--lift)); margin: var(--lift) 28px 0 -64px; padding: 26px 28px 20px; justify-content: flex-start;
   background: var(--paper); color: var(--label-ink); border-radius: 4px; box-shadow: 0 16px 36px rgb(0 0 0 / .45);
 }
-.card.open .text, .card.books .text { align-self: stretch; }
+/* Read more: the label grows with the article and scrolls inside itself once it is as tall as the card; no empty paper */
+.long { display: none; }
+.card.open .long { display: block; flex: 0 1 auto; min-height: 0; margin-top: 14px; overflow-y: auto; font-size: var(--read); line-height: 1.55; }
+.card.open:has(.long:not(:empty)) .extract { display: none; }
+/* while reading, what is not the article steps aside so the text gets the room */
+.card.open .because, .card.open .desc, .card.open .shown, .card.open .deeper { display: none; }
+.long p { margin: 0 0 12px; }
+.long p:last-child { margin-bottom: 0; }
+.long h3 { margin: 20px 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
 .card .because { padding-right: 0; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .card .because b { font-weight: 600; }
 .under { margin-top: 10px; gap: 8px; }
@@ -454,8 +462,10 @@ body:not([data-view="feed"]) .upnext { display: none; }
   .sheet, .nopic .sheet { grid-template: "pic" 34% "text" minmax(0, 1fr) "acts" auto "deeper" auto / minmax(0, 1fr); }
   .nopic .sheet, .start .sheet, .tail .sheet, .card.open .sheet, .card.books .sheet { grid-template: "text" minmax(0, 1fr) "acts" auto "deeper" auto / minmax(0, 1fr); }
   .card:not(.tail) .text { align-self: stretch; max-height: none; margin: var(--lift) 12px 0; padding: 16px 18px 12px; }
+  .card.open .text, .card.books .text { align-self: start; max-height: calc(100% - var(--lift)); }
   .card.start .text { margin-bottom: 12px; }
-  .under { margin-top: 8px; }
+  .under { margin-top: 8px; flex-wrap: nowrap; }
+  .card .under .act, .card .under .act[aria-pressed="true"], .card .wiki { padding: 0 12px 0 10px; font-size: 14px; white-space: nowrap; }
   .shown { margin-top: 8px; padding-top: 8px; }
   .acts { padding: 10px 12px 0; gap: 6px; }
   .acts .act { min-height: 62px; padding: 6px 2px; gap: 3px; border-radius: 10px; font-size: 12px; line-height: 14px; }

@@ -188,6 +188,26 @@
     return top.length === 3 ? top.map((b) => ({ label: b.label, text: b.text })) : null; // too little to choose from: keep the opening
   }
 
+  // Read more: the article itself in reading order, the opening and then section by section, until about max characters.
+  // Reference sections are left out, and so are blocks too short or too marked-up to be a paragraph (labels, formulas, table debris).
+  function longread(text, max) {
+    const out = [];
+    let cur = { label: '', paras: [] }, n = 0, skip = false;
+    for (const block of String(text || '').split(/\n+/)) {
+      const head = /^(=+)\s*(.+?)\s*=+$/.exec(block);
+      if (head) {
+        if (head[1].length === 2) { if (cur.paras.length) out.push(cur); cur = { label: head[2], paras: [] }; skip = END.test(head[2]); }
+        continue;
+      }
+      const t = block.replace(/\s*\(\s*[;,]?\s*\)/g, '').replace(/\(\s*[;,]\s*/g, '(').replace(/\s+/g, ' ').trim();
+      if (skip || t.length < 60 || /[{}\\|<>]/.test(t)) continue;
+      cur.paras.push(t); n += t.length;
+      if (n >= (max || 7000)) break;
+    }
+    if (cur.paras.length) out.push(cur);
+    return out;
+  }
+
   // Book recommendations: Open Library's best matches for the idea's name (keyless). An idea too narrow to have
   // books of its own (under 40 matches is mostly noise) returns nothing, and the caller tries the idea that led to it.
   const booksUrl = (q) => 'https://openlibrary.org/search.json?limit=12&language=eng&fields=title,author_name,first_publish_year,cover_i,key&q=' + encodeURIComponent(q);
@@ -203,6 +223,6 @@
     return out.sort((a, b) => !a.cover - !b.cover).slice(0, 4); // books with a cover first, otherwise Open Library's order
   }
 
-  const RH = { booksUrl, books, fullUrl, recut, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media, artUrl, art };
+  const RH = { booksUrl, books, fullUrl, recut, longread, TOPICS, W, fresh, bump, signal, lead, less, dwell, read, stats, decay, interests, plan, accept, trim, url, pages, link, see, tree, mediaUrl, media, artUrl, art };
   if (typeof module !== 'undefined') module.exports = RH; else root.RH = RH;
 })(this);

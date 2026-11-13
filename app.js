@@ -262,6 +262,7 @@ function makeCard(p, because) {
         cutTitle(p.title),
         p.description && h('p', { className: 'desc', textContent: cap(p.description) }),
         h('p', { className: 'extract' }, h('b', { textContent: text.slice(0, cut) }), text.slice(cut)),
+        h('div', { className: 'long' }), // Read more fills this with the article itself (loadLong)
         h('div', { className: 'shelf', hidden: true }),
         h('div', { className: 'under' },
           act('more', 'Read more'),
@@ -300,12 +301,24 @@ async function loadCut(card) {
   try {
     const r = await fetch(RH.fullUrl(card._page.title));
     if (!r.ok) return;
-    const cut = RH.recut((RH.pages(await r.json())[0] || {}).extract, card._page.title);
+    card._full = (RH.pages(await r.json())[0] || {}).extract; // kept for Read more
+    const cut = RH.recut(card._full, card._page.title);
     if (!cut) return;
     $('.extract', card).replaceChildren(...cut.flatMap((b, i) => [i && h('br'), h('small', { textContent: b.label }), i ? b.text : h('b', { textContent: b.text })]).filter(Boolean));
     card._say = card._page.title + '. ' + cut.map((b) => b.text).join(' ');
     fit(card);
   } catch { /* the opening paragraph stays */ }
+}
+
+// Read more: the article itself, the opening and then section by section, as far as RH.longread carries it.
+// If it cannot be fetched, the card's short text is what opens.
+async function loadLong(card) {
+  const box = $('.long', card);
+  if (box.childElementCount) return;
+  try {
+    if (!card._full) { const r = await fetch(RH.fullUrl(card._page.title)); if (r.ok) card._full = (RH.pages(await r.json())[0] || {}).extract; }
+  } catch { /* offline: the short text stays */ }
+  box.replaceChildren(...RH.longread(card._full).flatMap((s) => [s.label && h('h3', { textContent: s.label }), ...s.paras.map((t) => h('p', { textContent: t }))]).filter(Boolean));
 }
 
 // Book recommendations: Open Library's best matches for the idea, fetched the first time the button is pressed.
@@ -517,7 +530,7 @@ feed.addEventListener('click', (e) => {
     b.closest('li').remove();
   } else if (b.name === 'pic') flip(card, 1);
   else if (b.name === 'picback') flip(card, -1);
-  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Read less' : 'Read more'); fit(card); }
+  else if (b.name === 'more') { card.classList.toggle('open', on); b.ariaPressed = String(on); relabel(b, on ? 'Read less' : 'Read more'); if (on) loadLong(card); fit(card); }
   else if (b.name === 'books') {
     const more = $('button[name=more]', card);
     if (on && card.classList.contains('open')) { card.classList.remove('open'); more.ariaPressed = 'false'; relabel(more, 'Read more'); } // one or the other
