@@ -13,6 +13,7 @@
     Religion: ['Buddhism', 'Gnosticism', 'Zoroastrianism', 'Sufism', 'Reformation', 'Bhagavad Gita', 'Taoism', 'Dead Sea Scrolls'],
     Mathematics: ["Gödel's incompleteness theorems", 'Euclid', 'Fibonacci sequence', 'Prime number', 'Srinivasa Ramanujan', 'Chaos theory', 'Infinity', 'Alan Turing'],
     Music: ['Johann Sebastian Bach', 'Jazz', 'Ludwig van Beethoven', 'Blues', 'Sonata form', 'Igor Stravinsky', 'Funk', 'Raga'],
+    Entrepreneurship: ['Entrepreneurship', 'Startup company', 'Venture capital', 'Steve Jobs', 'Lean startup', 'Business model', 'Andrew Carnegie', 'Disruptive innovation'],
     Architecture: ['Gothic architecture', 'Brutalist architecture', 'Le Corbusier', 'Hagia Sophia', 'Frank Lloyd Wright', 'Parthenon', 'Art Deco', 'Angkor Wat'],
   };
 
